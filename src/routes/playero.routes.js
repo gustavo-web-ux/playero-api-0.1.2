@@ -1,0 +1,92 @@
+const { Router } = require('express');
+const authenticateToken = require('../middleware_login/auth.Middleware');
+const { authJwt } = require('../middlewares/init');
+const  tickets = require('../controllers/dataTable.controller')
+const traspaso = require('../controllers/traspaso.controller')
+const roles = require('../controllers/roles.controller')
+const ticketsID = require('../controllers/getTicketID')
+const litros = require('../controllers/reportes.controller');
+const sap = require('../controllers/dataSap.controller');
+const officeTrack = require('../utils/apiOfficeTrack/transformData.util');
+
+const sucursal = require('../controllers_login/sucursalController');
+
+const router = Router();
+// Aplica el middleware de autenticación a todas las rutas
+router.use(authenticateToken);
+
+
+//RUTAS DE LOS CONTROLLERS DEL SISTEMA PLAYERO
+
+//Rutas para la tabla de tickets
+router.get('/tickets/:id_suc',tickets.queryTickets); //get para obtener los tickets por id de sucursal
+router.get('/tickets/ticket/:id_ticket', ticketsID.getTicketById); //get para obtener los tickets por id de ticket
+
+//Ruta para la tabla trapaso
+router.get('/traspaso/:id_sucursal', traspaso.getTraspasos);
+router.get('/traspasos/traspaso/:id_traspaso', traspaso.getTraspasoById);
+
+//Rutas para obtener los datos de las sucursales
+router.get('/listSucursal', tickets.getSurcursal); //get para obtener las sucursales
+
+//nuevoSucursal
+router.get('/getSucursales', sucursal.getSucursales);
+router.post('/setDefaultSucursal', sucursal.setDefaultSucursal);
+router.get('/getAllSucursales', sucursal.getAllSucursales);
+router.get('/getAllSucursal', sucursal.getAllSucursal);
+router.post('/postSucursal', sucursal.createSucursal);
+router.put('/updateSucursalN/:id_sucursal', sucursal.updateSucursalN);
+
+//nuevoRoles
+router.get('/getRoles', roles.getRoles);
+router.get('/getAutorizaciones', roles.getAutorizaciones);
+router.post('/createRol', roles.createRole);
+router.get('/roles/:id_rol', roles.getRoleById);
+router.put('/updateRole/:id_rol', roles.updateRole);  // Actualizar un rol
+
+//Rutas para obtener los datos de los vehiculos
+router.get('/getConfigVehicle/:id_suc', tickets.getAllVehiclesId); // get Configuracion del vehiculo por id
+router.get('/getNullConfig/:id_suc', tickets.getNullVehiclesConfig);// get Configuracion del vehiculo para Completar datos
+router.get('/editVehicle/:id_vehiculo/:id_sucursal', tickets.editVehicles); // get para editar vehiculo por id
+router.put('/editVehicle/:id_vehiculo/:id_sucursal', tickets.addConfigVehicle); // put para editar vehiculo por id
+router.get('/getVehicles', tickets.getAllVehicles); // get para obtener todos los vehiculos
+router.post('/createVehicle', tickets.createVehicle); // post para crear un vehiculo
+router.post('/addConfigVehicleNew/:id_sucursal', tickets.addConfigVehicleNew); // post para agregar configuracion de vehiculo
+router.delete('/deleteVehicle/:id_vehiculo/:id_sucursal', tickets.deleteVehicle); // delete para eliminar un vehiculo
+
+//Rutas para obtener los datos de los Clientes
+router.get('/getAllClients', tickets.getAllClients) //get para obtener todas las sucursales
+router.post('/addNewclient', tickets.addNewclient); // post para agregar un nuevo cliente
+
+//Rutas para obtener los datos de las sucursales
+router.get('/getAllSucursals', tickets.getAllSucursals); //get para obtener todas las sucursales
+router.post('/createSucursal', tickets.createSucursal); // post para agregar una nueva sucursal
+router.delete('/deleteSucursal/:id_sucursal', tickets.deleteSucursal); // delete para eliminar una sucursal
+router.patch('/updateSucursal/:id_sucursal', tickets.updateSucursal); // patch para actualizar una sucursal
+router.get('/getSucursal/:id_sucursal', tickets.getSucursalId); // get para obtener una sucursal por id
+
+//Rutas para obtener los datos de los precios de los clientes
+router.get('/getAllPriceClient/:id_sucursal', tickets.getAllPriceClient); // get para obtener los precios de los clientes por id de sucursal
+router.get('/getArticle', tickets.getArticle); // get para obtener los articulos/combustibles
+router.post('/addNewclient')
+
+//Rutas para los reportes
+router.get('/litrosdiax/:id_sucursal/:id_bod/:fecha_hora', litros.tanques); // get para obtener los Litros inicial y litros final de un día X
+router.get('/bodega/:id_sucursal', tickets.getBodReport); // get para obtener las bodegas por id de sucursal
+router.post('/createBodega', tickets.createBod); // post para agregar una nueva bodega
+
+//Ruta para enviar datos a Sap
+router.post('/dataSap', sap.dataSap); // post para enviar datos a Sap
+
+//get para obtener los datos de los xml trasnformarlos y cargar a la BD de Calibracion de Pico
+//get para obtener los datos de los xml trasnformarlos y cargar a la BD de Traspaso de Combustible
+
+router.post('/dataOfficeTrack/:poi/:name/:customernumber', officeTrack.dataOfficeTrack); //post para enviar datos a OfficeTrack
+
+router.get('/getAllPerson', tickets.getAllPerson); //get para obtener todas las personas
+router.post('/createPerson', tickets.createPerson); // post para agregar una nueva persona
+router.get('/getPerson/:cedula', tickets.getPersonById); 
+router.put('/updatePerson/:cedula', tickets.updatePerson);
+router.delete('/deletePerson', tickets.deletePerson); // delete para eliminar una persona
+
+module.exports = router;

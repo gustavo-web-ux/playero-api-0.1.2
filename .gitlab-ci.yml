@@ -1,0 +1,14 @@
+image: debian:latest
+
+stages:
+  - test
+
+test-ssh-connection:
+  stage: test
+  before_script:
+    - apt-get update -qy
+    - apt-get install -y openssh-client sshpass
+  script:
+    - sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $SSH_USER@$VM_IPADDRESS "echo 'SSH connection test successful'"
+  only:
+    - main

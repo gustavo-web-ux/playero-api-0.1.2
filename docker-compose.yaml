@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  api-node-playero:
+    image: node-api-playero:latest
+    container_name: api-playero
+    ports:
+      - 6005:4020
+    restart: always
