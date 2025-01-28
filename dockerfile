@@ -21,7 +21,7 @@ RUN npm install
 COPY . .
 
 # Expone el puerto 3000 para que la aplicación pueda ser accedida desde fuera del contenedor
-EXPOSE 4020
+EXPOSE 4080
 
 # Comando para ejecutar la aplicación
 CMD ["npm", "start"]

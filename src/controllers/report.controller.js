@@ -162,7 +162,7 @@ const getParams = async (req, res) => {
             const abastecimiento = parseFloat(abastecimientoResult.recordset[0]?.litros || 0);
             const salidasTiket = parseFloat(cargasResult.recordset[0]?.litros_despachados > 0 ? cargasResult.recordset[0]?.litros_despachados : 0);
             const traspasoIngreso = parseFloat(traspasoIngresoResult.recordset.length > 0 ? traspasoIngresoResult.recordset[0].litros_segun_tanque : 0);
-            const traspasoSalida = parseFloat(traspasoSalidaResult.recordset.length > 0 ? traspasoSalidaResult.recordset[0].litros_segun_taxilitro : 0);
+            const traspasoSalida = parseFloat(traspasoSalidaResult.recordset.length > 0 && traspasoSalidaResult.recordset[0].litros_segun_taxilitro !== null ? traspasoSalidaResult.recordset[0].litros_segun_taxilitro : 0 );
             const totalRestanteCalculado = litrosMedicionInicial + abastecimiento + traspasoIngreso - salidasTiket - traspasoSalida;
             const totalLitrosTanqueCierre = parseFloat(cierreActualResult.recordset[0]?.litros_fin > 0 ? cierreActualResult.recordset[0]?.litros_fin : 0);
             //const salidasTicketTanque = parseFloat(cierreActualResult.recordset[0]?.litros_fin - cierreActualResult.recordset[0]?.litros_ini || 0);
