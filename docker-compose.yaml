@@ -8,5 +8,7 @@ services:
     image: node-api-playero-0.1.2:latest  # Nombre de la imagen
     container_name: node-api-playero-0.1.2  # Nombre del contenedor
     ports:
-      - 4080:4080  # Mapea el puerto externo 6005 al puerto interno 4080
+      - "4080:4080"  # Mapea el puerto externo 4080 al interno 4080
     restart: always  # Reinicia el contenedor automáticamente en caso de error
+    volumes:
+      - /home/administrador/APIS/shared:/usr/src/app/shared  # Mapea la carpeta del host al contenedor
