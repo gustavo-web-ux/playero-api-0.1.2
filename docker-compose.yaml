@@ -11,4 +11,4 @@ services:
       - "4080:4080"  # Mapea el puerto externo 4080 al interno 4080
     restart: always  # Reinicia el contenedor automáticamente en caso de error
     volumes:
-      - /home/administrador/APIS/shared:/usr/src/app/shared  # Mapea la carpeta del host al contenedor
+      - /home/administrador/APIS/shared:/home/administrador/APIS/shared  # Mapea la carpeta del host al contenedor
