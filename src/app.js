@@ -27,6 +27,7 @@ const corsOptions = {
     'http://190.104.134.250:2421',
     'http://playero.tecnoedilsa.com.py:2421',
     'https://playero.tecnoedilsa.com.py:2421',
+    'https://192.168.10.235:4200',
     'http://localhost:3000',
     'http://localhost:4000',
     'http://localhost:3001',
