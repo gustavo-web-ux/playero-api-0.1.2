@@ -2,8 +2,11 @@ version: '3'
 
 services:
   api-node-playero:
-    image: node-api-playero-0.1.2:latest
-    container_name: api-playero-0.1.2
+    build:
+      context: .  # Usa el Dockerfile en el directorio actual
+      dockerfile: Dockerfile  # Nombre del Dockerfile
+    image: node-api-playero-0.1.2:latest  # Nombre de la imagen
+    container_name: node-api-playero-0.1.2  # Nombre del contenedor
     ports:
-      - 6005:4080
-    restart: always
+      - 4080:4080  # Mapea el puerto externo 6005 al puerto interno 4080
+    restart: always  # Reinicia el contenedor automáticamente en caso de error
