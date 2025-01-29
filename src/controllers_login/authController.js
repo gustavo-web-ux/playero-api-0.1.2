@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { getConnection, sql } = require('../database/init');
-
+ 
 
 const login = async (req, res) => {
     const { username, password } = req.body;
