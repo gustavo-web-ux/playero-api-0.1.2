@@ -61,7 +61,7 @@ module.exports.querys = {
     WHERE ti.id_suc = @id_suc
     {{filterCondition}} 
     {{dateCondition}} 
-    ORDER BY ti.fecha DESC
+    ORDER BY ti.fecha DESC, ti.hora DESC
     OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;
   `,
 
