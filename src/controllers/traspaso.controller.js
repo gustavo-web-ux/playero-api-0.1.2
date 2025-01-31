@@ -42,9 +42,9 @@ const getTraspasos = async (req, res) => {
 
     // Construir filtro para fechas
     if (fechaInicio && fechaFin) {
-      filterCondition += `
-          AND t.fecha BETWEEN @fechaInicio AND @fechaFin
-      `;
+      filterCondition += ` AND t.fecha BETWEEN @fechaInicio AND @fechaFin `;
+    } else if (fechaInicio) {
+      filterCondition += ` AND t.fecha = @fechaInicio `;
     }
 
     // Consulta para obtener el total de registros
@@ -60,8 +60,8 @@ const getTraspasos = async (req, res) => {
     const totalResult = await pool
       .request()
       .input('id_sucursal', sql.Int, sucursalId)
-      .input('fechaInicio', sql.Int, parseInt(fechaInicio, 10) || 0) // Evitar valores inválidos
-      .input('fechaFin', sql.Int, parseInt(fechaFin, 10) || 99999999) // Evitar valores inválidos
+      .input('fechaInicio', sql.Int, fechaInicio ? parseInt(fechaInicio, 10) : null)
+      .input('fechaFin', sql.Int, fechaFin ? parseInt(fechaFin, 10) : null)
       .query(totalQuery);
 
     const totalRecords = totalResult.recordset[0].total;
@@ -92,8 +92,8 @@ const getTraspasos = async (req, res) => {
       .input('id_sucursal', sql.Int, sucursalId)
       .input('offset', sql.Int, offset)
       .input('limit', sql.Int, limit)
-      .input('fechaInicio', sql.Int, parseInt(fechaInicio, 10) || 0) // Evitar valores inválidos
-      .input('fechaFin', sql.Int, parseInt(fechaFin, 10) || 99999999) // Evitar valores inválidos
+      .input('fechaInicio', sql.Int, fechaInicio ? parseInt(fechaInicio, 10) : null)
+      .input('fechaFin', sql.Int, fechaFin ? parseInt(fechaFin, 10) : null)
       .query(paginatedQuery);
 
     // Respuesta al cliente
