@@ -187,6 +187,8 @@ const getParams = async (req, res) => {
 
             const diferencia_zeta = parseFloat(abastecimientoResult.recordset[0]?.zeta || 0);
             const mov_calculado = salidasTiket + taxCalib + traspasoSalida + diferencia_zeta;
+            // Formatear el resultado a dos decimales
+            const mov_calculado_formateado = mov_calculado.toFixed(2);
             const diferenciaSegunTanque = parseFloat(totalLitrosTanqueCierre - totalRestanteCalculado);
 
             // Aquí calculamos las métricas y almacenamos los resultados para el idBod actual
@@ -216,8 +218,8 @@ const getParams = async (req, res) => {
                     litros_salidas: salidasTiket + traspasoSalida,
                     calibraciones: taxCalibResult.recordset > 0 ? taxCalibResult.recordset : 0,
                     diferencia_zeta: diferencia_zeta,
-                    total_movimiento_calculado: mov_calculado,
-                    diferencia_segun_taxilitro: Math.round(mov_taxilitro - mov_calculado), // Redondea el resultado
+                    total_movimiento_calculado: mov_calculado_formateado,
+                    diferencia_segun_taxilitro: mov_taxilitro - mov_calculado_formateado,
                 }
             };
 
