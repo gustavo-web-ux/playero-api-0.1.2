@@ -119,19 +119,34 @@ const getParams = async (req, res) => {
                 //     ) b ON 1=1
                 // `),
                 pool.request().input('fecha', sql.Int, fecha).input('idbod', sql.Int, idBod).query(`
-                    SELECT SUM(m2.tax_final - m1.tax_inicial) AS mov_taxilitro 
+                    SELECT SUM(m2.tax_final - m1.tax_inicial) AS mov_taxilitro
                     FROM (
-                        SELECT mp.taxilitro AS tax_inicial, mp.id_pico 
-                        FROM med_inicio_cierre me 
-                        JOIN med_reg_pico mp ON me.id_med = mp.id_med 
-                        WHERE me.fecha = @fecha AND tipo = 1 AND me.id_bod = @idbod 
-                    ) m1 
-                    JOIN (
-                        SELECT mp.taxilitro AS tax_final, mp.id_pico AS id_picof 
-                        FROM med_inicio_cierre me 
-                        JOIN med_reg_pico mp ON me.id_med = mp.id_med 
-                        WHERE me.fecha = @fecha AND tipo = 2 AND me.id_bod = @idbod
-                    ) m2 ON m1.id_pico = m2.id_picof
+                        -- Selecciona el taxilitro inicial por pico
+                        SELECT mp.taxilitro AS tax_inicial, mp.id_pico
+                        FROM med_inicio_cierre me
+                            JOIN med_reg_pico mp ON me.id_med = mp.id_med
+                        WHERE me.fecha = @fecha
+                            AND me.tipo = 1
+                            AND me.id_bod = @idbod 
+                    ) m1
+                        JOIN (
+                        -- Selecciona el taxilitro final por pico, pero solo del último cierre (tipo = 2 y última hora)
+                        SELECT mp.taxilitro AS tax_final, mp.id_pico AS id_picof
+                        FROM med_inicio_cierre me
+                            JOIN med_reg_pico mp ON me.id_med = mp.id_med
+                        WHERE me.fecha = @fecha
+                            AND me.tipo = 2
+                            AND me.id_bod = @idbod
+                            AND me.hora = (
+                            -- Obtiene la última hora registrada en los cierres
+                            SELECT MAX(hora)
+                            FROM med_inicio_cierre
+                            WHERE fecha = @fecha
+                                AND tipo = 2
+                                AND id_bod = @idbod
+                        )
+                    ) m2
+                        ON m1.id_pico = m2.id_picof;
                 `),
                 pool.request().input('idbod', sql.Int, idBod).input('fecha', sql.Int, fecha).query(`
                     SELECT (litros_tanque_final - litros_tanque_inicial) AS litros_segun_tanque 
@@ -168,7 +183,7 @@ const getParams = async (req, res) => {
             //const salidasTicketTanque = parseFloat(cierreActualResult.recordset[0]?.litros_fin - cierreActualResult.recordset[0]?.litros_ini || 0);
             const taxCalib = parseFloat(taxCalibResult?.recordset[0]?.tax_calib || 0);
             const mov_taxilitro = parseFloat(cierreActualResult.recordset[0]?.mov_taxilitro || 0);
-            
+
 
             const diferencia_zeta = parseFloat(abastecimientoResult.recordset[0]?.zeta || 0);
             const mov_calculado = salidasTiket + taxCalib + traspasoSalida + diferencia_zeta;
