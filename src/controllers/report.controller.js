@@ -217,7 +217,7 @@ const getParams = async (req, res) => {
                     calibraciones: taxCalibResult.recordset > 0 ? taxCalibResult.recordset : 0,
                     diferencia_zeta: diferencia_zeta,
                     total_movimiento_calculado: mov_calculado,
-                    diferencia_segun_taxilitro: mov_taxilitro - mov_calculado,
+                    diferencia_segun_taxilitro: Math.round(mov_taxilitro - mov_calculado), // Redondea el resultado
                 }
             };
 
