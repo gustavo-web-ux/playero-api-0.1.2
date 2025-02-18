@@ -94,7 +94,6 @@ const readAndConvertImages = async (folderPath, imageTypes, resultData, rowIndex
     }
 };
 
-
 // Función para codificar un archivo a base64
 const encodeFileToBase64 = async (filePath) => {
     try {
@@ -187,7 +186,8 @@ const getMedicionesBySucursalFecha = async (req, res) => {
             const id_med_inicial = medicionInicial.id_med;
 
             const queryTanquesInicial = `
-                SELECT mt.*, ta.descripcion_tanque 
+                SELECT mt.*, ta.descripcion_tanque,
+                ROW_NUMBER() OVER (ORDER BY mt.id_tanque) - 1 AS rowNumber 
                 FROM med_reg_tanque mt
                 INNER JOIN tanque ta ON mt.id_tanque = ta.id_tanque
                 WHERE mt.id_med = @id_med;
@@ -205,7 +205,7 @@ const getMedicionesBySucursalFecha = async (req, res) => {
                 INNER JOIN pico_surtidor pc ON mp.id_pico = pc.id_pico
                 WHERE mp.id_med = @id_med;
             `;
-            
+
             const resultPicosInicial = await pool
                 .request()
                 .input("id_med", sql.Int, id_med_inicial)
@@ -216,8 +216,20 @@ const getMedicionesBySucursalFecha = async (req, res) => {
                 tanques: resultTanquesInicial.recordset
             };
 
+            //console.log(resultMedicionInicial.tanques);
             // ✅ Obtener imágenes de tanques
-            const decodedImagesTanques = await readAndConvertImages(folderPath, imageTypes, resultMedicionInicial.tanques);
+            //const decodedImagesTanques = await readAndConvertImages(folderPath, imageTypes, resultMedicionInicial.tanques);
+
+
+            const decodedImagesTanques = await Promise.all(
+                resultMedicionInicial.tanques.map(async (tanque, index) => {
+                    return await readAndConvertImages(folderPath, imageTypes, resultMedicionInicial.tanques, index);
+                })
+            );
+
+            //console.log(decodedImagesTanques2);
+
+            //console.log(decodedImagesTanques);
 
             // ✅ Obtener imágenes de picos dinámicamente
             const decodedImagesPicos = await Promise.all(
@@ -227,7 +239,7 @@ const getMedicionesBySucursalFecha = async (req, res) => {
             );
 
             //console.log(decodedImagesPicos);
-            
+
             respuesta.medicion_inicial[`bodega_${id_bod}`] = {
                 descripcion,
                 datos: {
@@ -241,12 +253,12 @@ const getMedicionesBySucursalFecha = async (req, res) => {
                     fotos_observacion: medicionInicial.fotos_observacion,
                     observacion: medicionInicial.observacion
                 },
-                tanques: resultTanquesInicial.recordset.reduce((acc, t) => {
+                tanques: resultMedicionInicial.tanques.reduce((acc, t, index) => {
                     acc[t.descripcion_tanque] = {
                         regla: t.regla,
                         temperatura: t.temperatura,
                         litros: t.litros,
-                        foto_tanque: decodedImagesTanques.foto_tanque || []
+                        foto_tanque: decodedImagesTanques[index].foto_tanque || []
                     };
                     return acc;
                 }, {}),
@@ -258,7 +270,7 @@ const getMedicionesBySucursalFecha = async (req, res) => {
                     return acc;
                 }, {})
             };
-            
+
         }
 
         const queryFinal = `
@@ -285,7 +297,8 @@ const getMedicionesBySucursalFecha = async (req, res) => {
 
             // Obtener tanques y picos
             const queryTanquesFinal = `
-                    SELECT mt.*, ta.descripcion_tanque 
+                    SELECT mt.*, ta.descripcion_tanque,
+                    ROW_NUMBER() OVER (ORDER BY mt.id_tanque) - 1 AS rowNumber 
                     FROM med_reg_tanque mt
                     INNER JOIN tanque ta ON mt.id_tanque = ta.id_tanque
                     WHERE mt.id_med = @id_med;
@@ -317,8 +330,16 @@ const getMedicionesBySucursalFecha = async (req, res) => {
                 tanques: resultTanquesFinal.recordset.length > 0 ? resultTanquesFinal.recordset : []
             };
 
-            // ✅ Obtener imágenes de tanques
-            const decodedImagesTanques = await readAndConvertImages(folderPath, imageTypes, resultMedicionFinal.tanques);
+            //console.log(resultMedicionFinal.tanques);
+
+
+            const decodedImagesTanques = resultMedicionFinal.tanques.length > 0
+                ? await Promise.all(
+                    resultMedicionFinal.tanques.map(async (tanque, index) => {
+                        return await readAndConvertImages(folderPath, imageTypes, resultMedicionFinal.tanques, index);
+                    })
+                )
+                : [];
 
             // ✅ Obtener imágenes de picos dinámicamente si existen
             const decodedImagesPicos = resultMedicionFinal.picos.length > 0
@@ -343,12 +364,12 @@ const getMedicionesBySucursalFecha = async (req, res) => {
                     fotos_observacion: medicionFinal.fotos_observacion
                 },
                 tanques: resultTanquesFinal.recordset.length > 0
-                    ? resultTanquesFinal.recordset.reduce((acc, t) => {
+                    ? resultTanquesFinal.recordset.reduce((acc, t, index) => {
                         acc[t.descripcion_tanque] = {
                             regla: t.regla,
                             temperatura: t.temperatura,
                             litros: t.litros,
-                            foto_tanque: decodedImagesTanques.foto_tanque || []
+                            foto_tanque: decodedImagesTanques[t.rowNumber]?.foto_tanque || []  // ✅ Usamos t.rowNumber en lugar de index
                         };
                         return acc;
                     }, {})
