@@ -158,8 +158,8 @@ const dataSap = async (req, res) => {
                 console.log(`Ticket ${ticket.id_ticket} enviado con respuesta:`, response.data);
 
                 if (response.data[0].CODE === '00') {
-                    const updateTicket = await pool.request()
-                        .input('id_ticket', sql.NVarChar, ticket.id_ticket)  
+                    const updateTicket = await pool.request()  
+                        .input('id_ticket', sql.Numeric(25, 0), ticket.id_ticket) 
                         .query('UPDATE ticket_surtidor SET sync = 1 WHERE id_ticket = @id_ticket');
 
                     console.log(`Ticket ${updateTicket} actualizado en la BD`);
