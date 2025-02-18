@@ -48,16 +48,18 @@ module.exports.querys = {
   getTicketsPage: `
     SELECT ti.*, 
       com.descripcion, 
-      suc.descripcion AS Sucursal, 
-      (ti.litros * ti.precio) AS Total, 
-      (SUBSTRING(CAST(ti.fecha AS varchar(8)), 7, 2) + '-' + 
-      SUBSTRING(CAST(ti.fecha AS varchar(8)), 5, 2) + '-' + 
-      SUBSTRING(CAST(ti.fecha AS varchar(8)), 1, 4)) AS Fecha1, 
-      pic.descripcion AS Pico
+      suc.descripcion as Sucursal, 
+      bod.descripcion as bodega,
+      (ti.litros * ti.precio) as Total, 
+      (SUBSTRING(CAST(ti.fecha as varchar(8)), 7, 2) + '-' + 
+      SUBSTRING(CAST(ti.fecha as varchar(8)), 5, 2) + '-' + 
+      SUBSTRING(CAST(ti.fecha as varchar(8)), 1, 4)) as Fecha1, 
+      pic.descripcion as Pico
     FROM dbo.ticket_surtidor ti
     JOIN combustible com ON ti.id_com = com.id_combustible
     JOIN sucursal suc ON ti.id_suc = suc.id_sucursal
     JOIN pico_surtidor pic ON ti.id_pico = pic.id_pico
+    JOIN bodega bod ON ti.id_bod = bod.id_bod
     WHERE ti.id_suc = @id_suc
     {{filterCondition}} 
     {{dateCondition}} 
@@ -113,7 +115,7 @@ module.exports.querys = {
       t.foto_obs_final,
       t.foto_obs_inicial,
       t.foto_obs_traspaso
-  FROM traspaso t
+    FROM traspaso t
       INNER JOIN bodega b1 ON t.bod_origen = b1.id_bod
       INNER JOIN bodega b2 ON t.bod_destino = b2.id_bod
       INNER JOIN sucursal s ON b1.id_sucursal = s.id_sucursal
@@ -121,6 +123,41 @@ module.exports.querys = {
       INNER JOIN persona per ON t.id_encargado_receptor = per.cedula
       INNER JOIN persona pla ON t.id_playero = pla.cedula
     WHERE id_traspaso = @id_traspaso;`,
+
+  // getAbastecimientoById: `
+  //   SELECT
+  //     r.id_repos,
+  //     r.id_suc,
+  //     s.descripcion AS sucursal,
+  //     r.id_bod,
+  //     b.descripcion AS bodega,
+  //     r.fecha,
+  //     (SUBSTRING(CAST(r.fecha AS varchar(8)), 7, 2) + '-' + 
+  //     SUBSTRING(CAST(r.fecha AS varchar(8)), 5, 2) + '-' + 
+  //     SUBSTRING(CAST(r.fecha AS varchar(8)), 1, 4)) AS fecha2,
+  //     r.hora,
+  //     r.nro_oc,
+  //     r.nro_remision,
+  //     r.litros_remision,
+  //     p.cedula,
+  //     p.nombre_apellido AS playero_nombre,
+  //     r.foto_rev_docs,
+  //     r.zeta_no_llega,
+  //     r.id_pico_para_zeta,
+  //     r.foto_taxilitro,
+  //     r.taxilitro_inicial,
+  //     r.taxilitro_final,
+  //     r.litros_zeta,
+  //     r.obs_repos,
+  //     r.foto_obs_repos,
+  //     r.litros_total_repos,
+  //     r.id_mongo
+  //   FROM repos_surtidor r
+  //     INNER JOIN bodega b ON r.id_bod = b.id_bod
+  //     INNER JOIN sucursal s ON r.id_suc = s.id_sucursal
+  //     INNER JOIN persona p ON r.playero = p.cedula
+  //   WHERE r.id_repos = @id_repos;
+  // `,
 
   getConfigVehicle: `SELECT c.id_vehiculo, v.descripcion_vehiculo, c.id_sucursal, c.unidad_negocio_centro, c.centro_costo, c.indice_pep, cl.descripcion_cliente, cl.ruc 
   FROM config_vehiculo c 

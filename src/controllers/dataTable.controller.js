@@ -52,6 +52,7 @@ const queryTickets = async (req, res) => {
             com.descripcion LIKE '%${filter}%' OR
             suc.descripcion LIKE '%${filter}%' OR
             pic.descripcion LIKE '%${filter}%' OR
+            bod.descripcion LIKE '%${filter}%' OR
             ti.id_ticket LIKE '%${filter}%' OR
             ti.id_equipo LIKE '%${filter}%' OR
             ti.ruc_cliente LIKE '%${filter}%' OR
@@ -86,6 +87,7 @@ const queryTickets = async (req, res) => {
       JOIN combustible com ON ti.id_com = com.id_combustible
       JOIN sucursal suc ON ti.id_suc = suc.id_sucursal
       JOIN pico_surtidor pic ON ti.id_pico = pic.id_pico
+      JOIN bodega bod ON ti.id_bod = bod.id_bod
       WHERE ti.id_suc = @id_suc
       ${filterCondition} ${dateCondition}
     `;
