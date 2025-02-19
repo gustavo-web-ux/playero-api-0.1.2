@@ -124,40 +124,40 @@ module.exports.querys = {
       INNER JOIN persona pla ON t.id_playero = pla.cedula
     WHERE id_traspaso = @id_traspaso;`,
 
-  // getAbastecimientoById: `
-  //   SELECT
-  //     r.id_repos,
-  //     r.id_suc,
-  //     s.descripcion AS sucursal,
-  //     r.id_bod,
-  //     b.descripcion AS bodega,
-  //     r.fecha,
-  //     (SUBSTRING(CAST(r.fecha AS varchar(8)), 7, 2) + '-' + 
-  //     SUBSTRING(CAST(r.fecha AS varchar(8)), 5, 2) + '-' + 
-  //     SUBSTRING(CAST(r.fecha AS varchar(8)), 1, 4)) AS fecha2,
-  //     r.hora,
-  //     r.nro_oc,
-  //     r.nro_remision,
-  //     r.litros_remision,
-  //     p.cedula,
-  //     p.nombre_apellido AS playero_nombre,
-  //     r.foto_rev_docs,
-  //     r.zeta_no_llega,
-  //     r.id_pico_para_zeta,
-  //     r.foto_taxilitro,
-  //     r.taxilitro_inicial,
-  //     r.taxilitro_final,
-  //     r.litros_zeta,
-  //     r.obs_repos,
-  //     r.foto_obs_repos,
-  //     r.litros_total_repos,
-  //     r.id_mongo
-  //   FROM repos_surtidor r
-  //     INNER JOIN bodega b ON r.id_bod = b.id_bod
-  //     INNER JOIN sucursal s ON r.id_suc = s.id_sucursal
-  //     INNER JOIN persona p ON r.playero = p.cedula
-  //   WHERE r.id_repos = @id_repos;
-  // `,
+  getAbastecimientoById: `
+    SELECT
+      r.id_repos,
+      r.id_suc,
+      s.descripcion AS sucursal,
+      r.id_bod,
+      b.descripcion AS bodega,
+      r.fecha,
+      (SUBSTRING(CAST(r.fecha AS varchar(8)), 7, 2) + '-' + 
+      SUBSTRING(CAST(r.fecha AS varchar(8)), 5, 2) + '-' + 
+      SUBSTRING(CAST(r.fecha AS varchar(8)), 1, 4)) AS fecha2,
+      r.hora,
+      r.nro_oc,
+      r.nro_remision,
+      r.litros_remision,
+      p.cedula,
+      p.nombre_apellido AS playero_nombre,
+      r.foto_rev_docs,
+      r.zeta_no_llega,
+      r.id_pico_para_zeta,
+      r.foto_taxilitro,
+      r.taxilitro_inicial,
+      r.taxilitro_final,
+      r.litros_zeta,
+      r.obs_repos,
+      r.foto_obs_repos,
+      r.litros_total_repos,
+      r.id_mongo
+    FROM repos_surtidor r
+      INNER JOIN bodega b ON r.id_bod = b.id_bod
+      INNER JOIN sucursal s ON r.id_suc = s.id_sucursal
+      INNER JOIN persona p ON r.playero = p.cedula
+    WHERE r.id_repos = @id_repos;
+  `,
 
   getConfigVehicle: `SELECT c.id_vehiculo, v.descripcion_vehiculo, c.id_sucursal, c.unidad_negocio_centro, c.centro_costo, c.indice_pep, cl.descripcion_cliente, cl.ruc 
   FROM config_vehiculo c 

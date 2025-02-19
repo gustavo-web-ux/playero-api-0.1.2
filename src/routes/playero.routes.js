@@ -6,7 +6,7 @@ const traspaso = require('../controllers/traspaso.controller')
 const medicion = require('../controllers/medicion.controller')
 const roles = require('../controllers/roles.controller')
 const ticketsID = require('../controllers/getTicketID')
-//const abastecimiento = require('../controllers/abastecimiento.controller')
+const abastecimiento = require('../controllers/abastecimiento.controller')
 const litros = require('../controllers/reportes.controller');
 const sap = require('../controllers/dataSap.controller');
 const officeTrack = require('../utils/apiOfficeTrack/transformData.util');
@@ -28,9 +28,9 @@ router.get('/tickets/ticket/:id_ticket', ticketsID.getTicketById); //get para ob
 router.get('/traspaso/:id_sucursal', traspaso.getTraspasos);
 router.get('/traspasos/traspaso/:id_traspaso', traspaso.getTraspasoById);
 
-// //Ruta para abastecimientos
-// router.get("/abastecimiento/:id_suc", abastecimiento.getReposSurtidor);
-// router.get('/abastecimientos/abastecimiento/:id_repos', abastecimiento.getAbastecimientoById);
+//Ruta para abastecimientos
+router.get("/abastecimiento/:id_suc", abastecimiento.getReposSurtidor);
+router.get('/abastecimientos/abastecimiento/:id_repos', abastecimiento.getAbastecimientoById);
 
 //Rutas para obtener los datos de las sucursales
 router.get('/listSucursal', tickets.getSurcursal); //get para obtener las sucursales
