@@ -74,7 +74,10 @@ const dataSap = async (req, res) => {
             .input('id_bod', sql.Int, bodega)
             .input('fecha', sql.VarChar, fecha)
             .input('id_suc', sql.Int, sucursal)
-            .query(`SELECT t.*, c.cod_sistema, s.codigo_sucursal, b.codigo_bodega, con.indice_pep, con.centro_costo
+            .query(`SELECT t.*, c.cod_sistema,
+                        case 
+                    when b.otro_centro = 1 then b.centro
+                    else s.codigo_sucursal end as codigo_sucursal , b.codigo_bodega, con.indice_pep, con.centro_costo
                     FROM ticket_surtidor t
                         JOIN combustible c ON t.id_com = c.id_combustible
                         JOIN sucursal s ON t.id_suc = s.id_sucursal
