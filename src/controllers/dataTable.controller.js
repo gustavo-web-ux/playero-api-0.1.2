@@ -44,9 +44,12 @@ const queryTickets = async (req, res) => {
     // Calcular el OFFSET para la paginación
     const offset = (page - 1) * limit;
 
+
+
     // Construir la condición de filtro
     let filterCondition = '';
     if (filter.trim() !== '') {
+
       filterCondition = `
         AND (
             com.descripcion LIKE '%${filter}%' OR
@@ -59,7 +62,8 @@ const queryTickets = async (req, res) => {
             (SUBSTRING(CAST(ti.fecha AS varchar(8)), 7, 2) + '-' + 
             SUBSTRING(CAST(ti.fecha AS varchar(8)), 5, 2) + '-' + 
             SUBSTRING(CAST(ti.fecha AS varchar(8)), 1, 4)) LIKE '%${filter}%' OR
-            CAST(ti.litros AS varchar) LIKE '%${filter}%'
+            CAST(ti.litros AS varchar) LIKE '%${filter}%' OR
+            (CASE WHEN ti.sync = 1 THEN 'si' ELSE 'no' END) LIKE '%${filter}%'
         )
       `;
     }

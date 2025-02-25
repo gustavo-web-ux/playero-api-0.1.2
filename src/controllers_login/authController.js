@@ -38,11 +38,11 @@ const login = async (req, res) => {
             { userId: user.id, roleId: user.role_id },
             process.env.JWT_SECRET,
             //{ expiresIn: '5m' } // Establecer la expiración a 5 minutos
-            { expiresIn: '2h' }
+            { expiresIn: '3h' }
         );
 
         //const expirationTime = Date.now() + 5 * 60 * 1000; // 5 minutos en milisegundos
-        const expirationTime = Date.now() + 2 * 60 * 60 * 1000; // 2 horas
+        const expirationTime = Date.now() + 3 * 60 * 60 * 1000; // 3 horas
 
         // Configurar la cookie con el token
         res.cookie('token', token, {

@@ -54,7 +54,11 @@ module.exports.querys = {
       (SUBSTRING(CAST(ti.fecha as varchar(8)), 7, 2) + '-' + 
       SUBSTRING(CAST(ti.fecha as varchar(8)), 5, 2) + '-' + 
       SUBSTRING(CAST(ti.fecha as varchar(8)), 1, 4)) as Fecha1, 
-      pic.descripcion as Pico
+      pic.descripcion as Pico,
+      CASE 
+        WHEN ti.sync = 1 THEN 'si' 
+        ELSE 'no' 
+      END as SyncStatus
     FROM dbo.ticket_surtidor ti
     JOIN combustible com ON ti.id_com = com.id_combustible
     JOIN sucursal suc ON ti.id_suc = suc.id_sucursal
