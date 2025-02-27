@@ -216,7 +216,7 @@ const getParams = async (req, res) => {
                     diferencia: dif_tax_ant_act,
                     movimientos: movTaxilitroResult.recordset,
                     litros_salidas: salidasTiket + traspasoSalida,
-                    calibraciones: taxCalibResult.recordset > 0 ? taxCalibResult.recordset : 0,
+                    calibraciones: taxCalib,
                     diferencia_zeta: diferencia_zeta,
                     total_movimiento_calculado: mov_calculado_formateado,
                     diferencia_segun_taxilitro: mov_taxilitro - mov_calculado_formateado,
