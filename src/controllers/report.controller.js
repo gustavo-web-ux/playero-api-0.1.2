@@ -149,7 +149,7 @@ const getParams = async (req, res) => {
                         ON m1.id_pico = m2.id_picof;
                 `),
                 pool.request().input('idbod', sql.Int, idBod).input('fecha', sql.Int, fecha).query(`
-                    SELECT (litros_tanque_final - litros_tanque_inicial) AS litros_segun_tanque 
+                    SELECT (taxilitro_final - taxilitro_inicial) AS litros_segun_tanque 
                     FROM traspaso 
                     WHERE bod_destino = @idbod AND fecha = @fecha
                 `),
