@@ -251,13 +251,15 @@ const getCalibracionById = async (req, res) => {
                     SUBSTRING(CAST(cc.fecha_hora AS varchar(8)), 5, 2) + '-' + 
                     SUBSTRING(CAST(cc.fecha_hora AS varchar(8)), 1, 4)) AS fecha2, 
                     cc.obs_gral, cc.ci_encargado, cc.nombre_encargado, s.descripcion AS sucursal,
-                    CONVERT(VARCHAR(5), cc.hora, 108) AS hora2,
-                    s.id_sucursal,
-                    bo.descripcion AS nombreBodega
-                FROM calibracion_pico_detalle cd
-                INNER JOIN calibracion_pico_cabecera cc ON cc.id = cd.cabecera_id
-                INNER JOIN bodega bo ON cc.bodega = bo.id_bod
-                INNER JOIN sucursal s ON s.id_sucursal = bo.id_sucursal
+                        ps.descripcion as picoNombre,
+                        CONVERT(VARCHAR(5), cc.hora, 108) AS hora2,
+                        s.id_sucursal,
+                        bo.descripcion AS nombreBodega
+                    from calibracion_pico_detalle cd
+                        inner join calibracion_pico_cabecera cc on cc.id = cd.cabecera_id
+                        INNER JOIN bodega bo ON cc.bodega = bo.id_bod
+                        INNER JOIN sucursal s ON s.id_sucursal = bo.id_sucursal
+                        INNER JOIN pico_surtidor ps ON ps.id_pico = cd.pico
                 WHERE cd.cabecera_id = @cabecera_id;
             `);
 
