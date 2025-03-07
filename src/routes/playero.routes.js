@@ -7,16 +7,17 @@ const medicion = require('../controllers/medicion.controller')
 const roles = require('../controllers/roles.controller')
 const ticketsID = require('../controllers/getTicketID')
 const abastecimiento = require('../controllers/abastecimiento.controller')
+const calibraciones = require('../controllers/calibracionPico.controller')
 const litros = require('../controllers/reportes.controller');
 const sap = require('../controllers/dataSap.controller');
 const officeTrack = require('../utils/apiOfficeTrack/transformData.util');
+//const bodegas = require('../controllers/bodegas.controller')
 
 const sucursal = require('../controllers_login/sucursalController');
 
 const router = Router();
 // Aplica el middleware de autenticación a todas las rutas
 router.use(authenticateToken);
-
 
 //RUTAS DE LOS CONTROLLERS DEL SISTEMA PLAYERO
 
@@ -35,6 +36,10 @@ router.get('/abastecimientos/abastecimiento/:id_repos', abastecimiento.getAbaste
 //Rutas para obtener los datos de las sucursales
 router.get('/listSucursal', tickets.getSurcursal); //get para obtener las sucursales
 
+//Rutas para calibraciones
+router.get("/calibraciones/:id_sucursal", calibraciones.getCalibraciones);
+router.get("/calibraciones/detalle/:id", calibraciones.getCalibracionById);
+
 //Medicion inicial y final
 router.get("/mediciones/:id_suc/:fecha/:id_bod", medicion.getMedicionesBySucursalFecha);
 router.get("/mediciones/bodegas/:id_sucursal", medicion.getBodegasBySucursal);
@@ -46,6 +51,10 @@ router.get('/getAllSucursales', sucursal.getAllSucursales);
 router.get('/getAllSucursal', sucursal.getAllSucursal);
 router.post('/postSucursal', sucursal.createSucursal);
 router.put('/updateSucursalN/:id_sucursal', sucursal.updateSucursalN);
+
+//rutas bodegas
+//router.post('/createBodegas', bodegas.createBodegas);
+//router.get('/getBodegasBySucursal/:id_sucursal', bodegas.getBodegasBySucursal);
 
 //nuevoRoles
 router.get('/getRoles', roles.getRoles);
