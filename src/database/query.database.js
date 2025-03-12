@@ -77,7 +77,7 @@ module.exports.querys = {
   (SUBSTRING(CAST(ts.fecha AS varchar(8)), 7, 2) + '-' + 
   SUBSTRING(CAST(ts.fecha AS varchar(8)), 5, 2) + '-' + 
   SUBSTRING(CAST(ts.fecha AS varchar(8)), 1, 4)) AS fecha2,
-  pi.descripcion as pico, ts.id_playero, pl.nombre_apellido as playero, ts.ruc_cliente, cli.descripcion_cliente, 
+  pi.descripcion as pico, ts.id_playero, pl.nombre_apellido as playero, ts.ruc_cliente, cli.descripcion_cliente, ts.precio,
   ts.id_operador as id_operador_chofer, op.nombre_apellido as operador_chofer, ts.id_equipo, ve.descripcion_vehiculo as equipo_vehiculo,
   ts.kilometro, ts.horometro, pi.id_combustible, com.descripcion as combustible, ts.litros, ts.observaciones_ticket, ts.ubicacion_carga,
   ts.firma_conductor, ts.foto_observaciones, ts.foto_chapa, ts.foto_taxilitro,ts.inicio_taxilitro,ts.final_taxilitro, ts.foto_taxilitro_fin,ts.foto_horometro, ts.foto_kilometro
