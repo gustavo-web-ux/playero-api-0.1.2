@@ -4,6 +4,7 @@ const { authJwt } = require('../middlewares/init');
 const  tickets = require('../controllers/dataTable.controller')
 const traspaso = require('../controllers/traspaso.controller')
 const medicion = require('../controllers/medicion.controller')
+const precios = require('../controllers/precioCombustible.controller')
 const roles = require('../controllers/roles.controller')
 const ticketsID = require('../controllers/getTicketID')
 const abastecimiento = require('../controllers/abastecimiento.controller')
@@ -62,6 +63,22 @@ router.get('/getAutorizaciones', roles.getAutorizaciones);
 router.post('/createRol', roles.createRole);
 router.get('/roles/:id_rol', roles.getRoleById);
 router.put('/updateRole/:id_rol', roles.updateRole);  // Actualizar un rol
+
+//precio combustible sucursal
+router.get('/getprecioSucursal/:id_sucursal', precios.getPreciosCombustibleSucursal);
+router.post('/createPrecioSucursal/:id_sucursal', precios.createPrecioCombustible);
+router.put('/updatePrecioSucursal/:id_sucursal/:id_combustible', precios.updatePrecioCombustible);
+
+//getCombustibles
+router.get('/getCombustibles', precios.getCombustibles);
+
+//getClientes
+router.get('/getClientes', precios.getClientes);
+
+//precio combustible cliente
+router.get('/getprecioCliente/:id_sucursal', precios.getPreciosClienteSucursal);
+router.post('/createPrecioCliente/:id_sucursal', precios.createPrecioClienteSucursal);
+router.put('/updatePrecioCliente/:id_sucursal/:id_combustible/:id_ruc', precios.updatePrecioClienteSucursal);
 
 //Rutas para obtener los datos de los vehiculos
 router.get('/getConfigVehicle/:id_suc', tickets.getAllVehiclesId); // get Configuracion del vehiculo por id
