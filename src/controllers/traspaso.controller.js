@@ -227,7 +227,7 @@ const getTraspasoById = async (req, res) => {
 
     // Definir tipos de imágenes y la carpeta donde se encuentran
     const folderPath = '/home/administrador/APIS/shared';
-    const imageTypes = ['foto_obs_final', 'foto_obs_inicial', 'foto_obs_traspaso', 'firma_receptor'];
+    const imageTypes = ['foto_obs_final', 'foto_taxilitro', 'foto_obs_inicial', 'foto_obs_traspaso', 'firma_receptor'];
 
     // Procesar imágenes
     const images = await readAndConvertImages(folderPath, imageTypes, result.recordset);

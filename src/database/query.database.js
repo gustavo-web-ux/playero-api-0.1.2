@@ -115,6 +115,7 @@ module.exports.querys = {
       p.descripcion,
       t.taxilitro_inicial,
       t.taxilitro_final,
+      t.foto_taxilitro,
       t.firma_receptor,
       t.foto_obs_final,
       t.foto_obs_inicial,
