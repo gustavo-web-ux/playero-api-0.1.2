@@ -79,6 +79,7 @@ router.get('/getClientes', precios.getClientes);
 router.get('/getprecioCliente/:id_sucursal', precios.getPreciosClienteSucursal);
 router.post('/createPrecioCliente/:id_sucursal', precios.createPrecioClienteSucursal);
 router.put('/updatePrecioCliente/:id_sucursal/:id_combustible/:id_ruc', precios.updatePrecioClienteSucursal);
+router.delete('/deletePrecioCliente/:id_sucursal/:id_combustible/:id_ruc', precios.deletePrecioClienteSucursal);
 
 //Rutas para obtener los datos de los vehiculos
 router.get('/getConfigVehicle/:id_suc', tickets.getAllVehiclesId); // get Configuracion del vehiculo por id

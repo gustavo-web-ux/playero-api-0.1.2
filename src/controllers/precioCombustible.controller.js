@@ -1,5 +1,6 @@
 const { getConnection, sql } = require('../database/init');
 
+//COMBUSTIBLE SUCURSAL
 const getPreciosCombustibleSucursal = async (req, res) => {
     const { id_sucursal } = req.params; // Se recibe el id de la sucursal
     let { page = 1, limit = 10 } = req.query; // Se reciben los parámetros de paginación
@@ -154,6 +155,7 @@ const updatePrecioCombustible = async (req, res) => {
     }
 };
 
+//COMBUSTIBLE CLIENTE
 const getPreciosClienteSucursal = async (req, res) => {
     const { id_sucursal } = req.params;
     let { page = 1, limit = 10, searchTerm = "" } = req.query; // ✅ Agregar `searchTerm`
@@ -335,6 +337,46 @@ const updatePrecioClienteSucursal = async (req, res) => {
     }
 };
 
+const deletePrecioClienteSucursal = async (req, res) => {
+    const { id_sucursal, id_combustible, id_ruc } = req.params; // Se reciben en la URL
+
+    try {
+        const pool = await getConnection();
+
+        // 1️⃣ Verificar si el registro existe antes de eliminarlo
+        const existingQuery = await pool.request()
+            .input('id_sucursal', sql.Int, id_sucursal)
+            .input('id_combustible', sql.Int, id_combustible)
+            .input('id_ruc', sql.VarChar(20), id_ruc)
+            .query(`
+                SELECT 1 FROM dbo.precio_sucursal_cliente 
+                WHERE id_sucursal = @id_sucursal AND id_combustible = @id_combustible AND id_ruc = @id_ruc
+            `);
+
+        if (existingQuery.recordset.length === 0) {
+            return res.status(404).json({ message: "No se encontró el registro para eliminar." });
+        }
+
+        // 2️⃣ Eliminar el registro si existe
+        await pool.request()
+            .input('id_sucursal', sql.Int, id_sucursal)
+            .input('id_combustible', sql.Int, id_combustible)
+            .input('id_ruc', sql.VarChar(20), id_ruc)
+            .query(`
+                DELETE FROM dbo.precio_sucursal_cliente 
+                WHERE id_sucursal = @id_sucursal AND id_combustible = @id_combustible AND id_ruc = @id_ruc
+            `);
+
+        return res.status(200).json({ message: "Registro eliminado correctamente." });
+
+    } catch (error) {
+        console.error('❌ Error al eliminar el precio del cliente en la sucursal:', error);
+        res.status(500).json({ message: "Error interno al eliminar el precio del cliente." });
+    }
+};
+
+
+//OTROS
 const getCombustibles = async (req, res) => {
     try {
         const pool = await getConnection(); // Obtiene la conexión a la BD
@@ -415,5 +457,5 @@ const getClientes = async (req, res) => {
 module.exports = {
     getPreciosCombustibleSucursal, createPrecioCombustible, updatePrecioCombustible,
     getPreciosClienteSucursal, createPrecioClienteSucursal, updatePrecioClienteSucursal,
-    getCombustibles, getClientes
+    getCombustibles, getClientes, deletePrecioClienteSucursal
 };
