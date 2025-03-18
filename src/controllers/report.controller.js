@@ -100,9 +100,8 @@ const getParams = async (req, res) => {
                     GROUP BY m.id_med, m.hora, m.litros) y on 1=1
                 `),
                 pool.request().input('idbod', sql.Int, idBod).input('fecha', sql.Int, fecha).query(`
-                    SELECT SUM(cd.taxilitro_final - cd.taxilitro_inicial) AS tax_calib 
-                    FROM calibracion_pico_cabecera cc 
-                    JOIN calibracion_pico_detalle cd ON cc.id = cd.cabecera_id 
+                    SELECT SUM(cc.taxilitro_final - cc.taxilitro_inicial) AS tax_calib
+                        FROM calibracion_pico_cabecera cc
                     WHERE cc.bodega = @idbod AND cc.fecha_hora = @fecha
                 `),
                 // pool.request().input('id_fin', sql.Int, id_fin).input('id_inicio', sql.Int, id_inicio).query(`
