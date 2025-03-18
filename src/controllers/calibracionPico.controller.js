@@ -36,8 +36,8 @@ const getCalibraciones = async (req, res) => {
                 CONVERT(VARCHAR(5), pc.hora, 108) + ' horas' LIKE '%${filter}%' OR
                 CAST(pc.ci_encargado AS VARCHAR) LIKE '%${filter}%' OR
                 pc.nombre_encargado LIKE '%${filter}%' OR
-                CAST(cd.tipo_operacion AS VARCHAR) LIKE '%${filter}%' OR
-                CAST(ISNULL(cd.tipo_operacion, 'Sin especificar') AS VARCHAR) LIKE '%${filter}%' OR
+                CAST(pc.tipo_operacion AS VARCHAR) LIKE '%${filter}%' OR
+                CAST(ISNULL(pc.tipo_operacion, 'Sin especificar') AS VARCHAR) LIKE '%${filter}%' OR
                 (SUBSTRING(CAST(pc.fecha_hora AS varchar(8)), 7, 2) + '-' + 
                 SUBSTRING(CAST(pc.fecha_hora AS varchar(8)), 5, 2) + '-' + 
                 SUBSTRING(CAST(pc.fecha_hora AS varchar(8)), 1, 4)) LIKE '%${filter}%'
@@ -55,7 +55,7 @@ const getCalibraciones = async (req, res) => {
         const totalQuery = `
         SELECT COUNT(*) AS total 
         FROM calibracion_pico_cabecera pc
-            INNER JOIN calibracion_pico_detalle cd ON cd.cabecera_id = pc.id
+            INNER JOIN pico_surtidor ps ON ps.id_pico = pc.pico
             INNER JOIN bodega bo ON pc.bodega = bo.id_bod
             INNER JOIN sucursal s ON s.id_sucursal = bo.id_sucursal
         WHERE s.id_sucursal = @id_sucursal
@@ -88,14 +88,16 @@ const getCalibraciones = async (req, res) => {
             pc.id,
             pc.formCode,
             (SUBSTRING(CAST(pc.fecha_hora AS varchar(8)), 7, 2) + '-' + 
-                    SUBSTRING(CAST(pc.fecha_hora AS varchar(8)), 5, 2) + '-' + 
-                    SUBSTRING(CAST(pc.fecha_hora AS varchar(8)), 1, 4)) AS fecha2,
+                            SUBSTRING(CAST(pc.fecha_hora AS varchar(8)), 5, 2) + '-' + 
+                            SUBSTRING(CAST(pc.fecha_hora AS varchar(8)), 1, 4)) AS fecha2,
             pc.fecha_hora,
             pc.hora,
+            
             CONVERT(VARCHAR(5), pc.hora, 108) AS hora2,
             pc.bodega,
-            ISNULL(cd.tipo_operacion, 'Sin especificar') AS tipo_operacion,
+            ISNULL(pc.tipo_operacion, 'Sin especificar') AS tipo_operacion,
             pc.obs_gral,
+            ps.descripcion as pico,
             pc.ci_encargado,
             pc.nombre_encargado,
             pc.id_mongo,
@@ -103,7 +105,7 @@ const getCalibraciones = async (req, res) => {
             s.id_sucursal,
             bo.descripcion AS nombreBodega
         FROM calibracion_pico_cabecera pc
-            INNER JOIN calibracion_pico_detalle cd ON cd.cabecera_id = pc.id
+            INNER JOIN pico_surtidor ps ON ps.id_pico = pc.pico
             INNER JOIN bodega bo ON pc.bodega = bo.id_bod
             INNER JOIN sucursal s ON s.id_sucursal = bo.id_sucursal
         WHERE s.id_sucursal = @id_sucursal
@@ -246,20 +248,17 @@ const getCalibracionById = async (req, res) => {
             .input("cabecera_id", sql.Int, cabecera_id)
             .query(`
                 SELECT
-                    cd.*, 
+                    cd.*,
                     (SUBSTRING(CAST(cc.fecha_hora AS varchar(8)), 7, 2) + '-' + 
                     SUBSTRING(CAST(cc.fecha_hora AS varchar(8)), 5, 2) + '-' + 
-                    SUBSTRING(CAST(cc.fecha_hora AS varchar(8)), 1, 4)) AS fecha2, 
-                    cc.obs_gral, cc.ci_encargado, cc.nombre_encargado, s.descripcion AS sucursal,
-                        ps.descripcion as picoNombre,
-                        CONVERT(VARCHAR(5), cc.hora, 108) AS hora2,
-                        s.id_sucursal,
-                        bo.descripcion AS nombreBodega
-                    from calibracion_pico_detalle cd
-                        inner join calibracion_pico_cabecera cc on cc.id = cd.cabecera_id
-                        INNER JOIN bodega bo ON cc.bodega = bo.id_bod
-                        INNER JOIN sucursal s ON s.id_sucursal = bo.id_sucursal
-                        INNER JOIN pico_surtidor ps ON ps.id_pico = cd.pico
+                    SUBSTRING(CAST(cc.fecha_hora AS varchar(8)), 1, 4)) AS fecha2,
+                    cc.obs_gral, cc.ci_encargado, cc.nombre_encargado, cc.taxilitro_inicial, cc.taxilitro_final, cc.tipo_operacion, bo.descripcion as nombreBodega,
+                    cc.foto_inicial_taxilitro, cc.foto_final_taxilitro, cc.foto_precinto_colocado, cc.foto_precinto_retirado,
+                    cc.nro_precinto_retirado, cc.nro_precinto_colocado, cc.firma_calibrador,
+                    CONVERT(VARCHAR(5), cc.hora, 108) AS hora2
+                from calibracion_pico_detalle cd
+                    inner join calibracion_pico_cabecera cc on cc.id = cd.cabecera_id
+                    inner join bodega bo on bo.id_bod = cc.bodega
                 WHERE cd.cabecera_id = @cabecera_id;
             `);
 
@@ -270,7 +269,9 @@ const getCalibracionById = async (req, res) => {
 
         // Definir tipos de imágenes y la carpeta donde se encuentran
         const folderPath = "/home/administrador/APIS/shared"; // 📌 Ruta donde se guardan las imágenes
-        const imageTypes = ["foto_inicial_taxilitro", "foto_final_taxilitro", "foto_precinto_retirado", "foto_precinto_colocado", "fotos_obs_med", "firma_calibrador"];
+        const imageTypes = ["foto_inicial_taxilitro", "foto_final_taxilitro", "foto_precinto_retirado", 
+        "foto_precinto_colocado", "foto_taxilitro_carga", "foto_med_balde", "firma_calibrador", "foto_final_taxilitro", 
+        "foto_precinto_retirado", "foto_precinto_colocado"];
 
         // Leer y convertir imágenes a base64 para todos los registros
         for (let record of result.recordset) {
