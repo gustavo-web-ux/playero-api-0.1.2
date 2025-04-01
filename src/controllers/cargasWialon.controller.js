@@ -87,7 +87,7 @@ const getReporteWialonPlayero = async (req, res) => {
                     COALESCE(cw.nivel_combus_final, 0) as combus_final
                 FROM ticket_surtidor ts
                 JOIN sucursal su ON su.id_sucursal = ts.id_suc
-                FULL JOIN cargas_wialon cw ON ts.id_equipo = cw.id_equipo
+                FULL JOIN cargas_wialon_tmp cw ON ts.id_equipo = cw.id_equipo
                     AND CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) = CAST(cw.fecha_hora AS DATE)
                     --AND ABS(DATEDIFF(HOUR,
                         --CAST(CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) AS DATETIME) 
@@ -102,7 +102,7 @@ const getReporteWialonPlayero = async (req, res) => {
             SELECT COUNT(*) AS total
             FROM ticket_surtidor ts
             JOIN sucursal su ON su.id_sucursal = ts.id_suc
-            FULL JOIN cargas_wialon cw ON ts.id_equipo = cw.id_equipo
+            FULL JOIN cargas_wialon_tmp cw ON ts.id_equipo = cw.id_equipo
                 AND CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) = CAST(cw.fecha_hora AS DATE)
                 AND ABS(DATEDIFF(HOUR,
                     CAST(CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) AS DATETIME)
@@ -129,45 +129,45 @@ const getReporteWialonPlayero = async (req, res) => {
     }
 };
 
-const getPlayeroWialonDetalle = async (req, res) => {
-    try {
-        const pool = await getConnection();
-        const { id_ticket } = req.params; // <-- cambio aqu
+// const getPlayeroWialonDetalle = async (req, res) => {
+//     try {
+//         const pool = await getConnection();
+//         const { id_ticket } = req.params; // <-- cambio aqu
 
-        if (!id_ticket) {
-            return res.status(400).json({ message: "El parámetro id_ticket es obligatorio." });
-        }
+//         if (!id_ticket) {
+//             return res.status(400).json({ message: "El parámetro id_ticket es obligatorio." });
+//         }
 
-        const request = pool.request();
-        request.input("id_ticket", sql.VarChar, id_ticket);
+//         const request = pool.request();
+//         request.input("id_ticket", sql.VarChar, id_ticket);
 
-        const query = `
-            SELECT ts.*,
-            cw.id_equipo as id_vehiculo, cw.fecha_hora, cw.litros_sensor, cw.localizacion, cw.nivel_combus_final, cw.nivel_combus_inicial
-            FROM ticket_surtidor ts
-            INNER JOIN cargas_wialon cw ON ts.id_equipo = cw.id_equipo
-                AND CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) = CAST(cw.fecha_hora AS DATE)
-                AND ABS(DATEDIFF(HOUR,
-                    CAST(CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) AS DATETIME)
-                    + CAST(ts.hora AS DATETIME), 
-                    cw.fecha_hora)) <= 2
-            WHERE ts.id_ticket = @id_ticket
-              AND cw.litros_sensor IS NOT NULL
-        `;
+//         const query = `
+//             SELECT ts.*,
+//             cw.id_equipo as id_vehiculo, cw.fecha_hora, cw.litros_sensor, cw.localizacion, cw.nivel_combus_final, cw.nivel_combus_inicial
+//             FROM ticket_surtidor ts
+//             INNER JOIN cargas_wialon_tmp cw ON ts.id_equipo = cw.id_equipo
+//                 AND CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) = CAST(cw.fecha_hora AS DATE)
+//                 AND ABS(DATEDIFF(HOUR,
+//                     CAST(CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) AS DATETIME)
+//                     + CAST(ts.hora AS DATETIME), 
+//                     cw.fecha_hora)) <= 2
+//             WHERE ts.id_ticket = @id_ticket
+//               AND cw.litros_sensor IS NOT NULL
+//         `;
 
-        const result = await request.query(query);
+//         const result = await request.query(query);
 
-        if (result.recordset.length === 0) {
-            return res.status(404).json({ message: "No existe cruce de datos entre el Playero y Wialon para el ticket consultado" });
-        }
+//         if (result.recordset.length === 0) {
+//             return res.status(404).json({ message: "No existe cruce de datos entre el Playero y Wialon para el ticket consultado" });
+//         }
 
-        return res.status(200).json({ data: result.recordset[0] });
+//         return res.status(200).json({ data: result.recordset[0] });
 
-    } catch (error) {
-        console.error("❌ Error en getTicketDetalle:", error);
-        res.status(500).json({ message: "Error interno al obtener el detalle del ticket." });
-    }
-};
+//     } catch (error) {
+//         console.error("❌ Error en getTicketDetalle:", error);
+//         res.status(500).json({ message: "Error interno al obtener el detalle del ticket." });
+//     }
+// };
 
 
-module.exports = { getReporteWialonPlayero, getPlayeroWialonDetalle };
+module.exports = { getReporteWialonPlayero };
