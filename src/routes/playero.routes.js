@@ -12,8 +12,8 @@ const calibraciones = require('../controllers/calibracionPico.controller')
 const litros = require('../controllers/reportes.controller');
 const sap = require('../controllers/dataSap.controller');
 const officeTrack = require('../utils/apiOfficeTrack/transformData.util');
-// const bodegas = require('../controllers/bodegas.controller')
-// const tanques = require('../controllers/tanques.controller')
+const bodegas = require('../controllers/bodegas.controller')
+const tanques = require('../controllers/tanques.controller')
 const sucursal = require('../controllers_login/sucursalController');
 const playeroWialon = require('../controllers/cargasWialon.controller');
 
@@ -53,29 +53,29 @@ router.get('/getAllSucursales', sucursal.getAllSucursales);
 router.get('/getAllSucursal', sucursal.getAllSucursal);
 router.post('/postSucursal', sucursal.createSucursal);
 router.put('/updateSucursalN/:id_sucursal', sucursal.updateSucursalN);
-// router.get('/getSucursalCreada/:id_sucursal', sucursal.getSucursal);
-// router.put('/updateSucursal/:id_sucursal', sucursal.updateSucursal);
-// router.get("/getConfigSAP", sucursal.getConfigSAP);
+router.get('/getSucursalCreada/:id_sucursal', sucursal.getSucursal);
+router.put('/updateSucursal/:id_sucursal', sucursal.updateSucursal);
+router.get("/getConfigSAP", sucursal.getConfigSAP);
 
 //rutas bodegas
-// router.post('/createBodegas', bodegas.createBodegas);
-// router.get('/getBodegasBySucursal/:id_sucursal', bodegas.getBodegasBySucursal);
-// router.get('/getPicosByBodega/:id_sucursal', bodegas.getPicosByBodega);
-// router.get('/getTanquesByBodega/:id_sucursal', bodegas.getTanquesByBodega);
-// router.get("/getBodegas", bodegas.getBodegas); 
-// router.put("/updateBodega/:id_bod", bodegas.updateBodega); 
-// router.get("/getListPicosByBodega/:id_bodega", bodegas.getListPicosByBodega); 
-// router.get("/getListTanquesByBodega/:id_bodega", bodegas.getListTanquesByBodega); 
+router.post('/createBodegas', bodegas.createBodegas);
+router.get('/getBodegasBySucursal/:id_sucursal', bodegas.getBodegasBySucursal);
+router.get('/getPicosByBodega/:id_sucursal', bodegas.getPicosByBodega);
+router.get('/getTanquesByBodega/:id_sucursal', bodegas.getTanquesByBodega);
+router.get("/getBodegas", bodegas.getBodegas); 
+router.put("/updateBodega/:id_bod", bodegas.updateBodega); 
+router.get("/getListPicosByBodega/:id_bodega", bodegas.getListPicosByBodega); 
+router.get("/getListTanquesByBodega/:id_bodega", bodegas.getListTanquesByBodega); 
 
-// //rutas para crear picos
-// router.post('/createPicos', calibraciones.createPicos);
-// router.get('/getPicos', calibraciones.getPicos);
-// router.put("/updatePico/:id_sucursal/:id_bod/:id_pico", calibraciones.updatePico);
+//rutas para crear picos
+router.post('/createPicos', calibraciones.createPicos);
+router.get('/getPicos', calibraciones.getPicos);
+router.put("/updatePico/:id_sucursal/:id_bod/:id_pico", calibraciones.updatePico);
 
-// //rutas tanques
-// router.post('/createTanques', tanques.createTanques);
-// router.get('/getTanques', tanques.getTanques);
-// router.put("/updateTanque/:id_sucursal/:id_bodega/:id_tanque", tanques.updateTanque);
+//rutas tanques
+router.post('/createTanques', tanques.createTanques);
+router.get('/getTanques', tanques.getTanques);
+router.put("/updateTanque/:id_sucursal/:id_bodega/:id_tanque", tanques.updateTanque);
 
 //nuevoRoles
 router.get('/getRoles', roles.getRoles);

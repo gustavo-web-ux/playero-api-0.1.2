@@ -61,7 +61,14 @@ const createSucursal = async (req, res) => {
     const pool = await getConnection();
 
     // Obtener los valores enviados desde el cuerpo de la solicitud
-    const { descripcion, codigo_sucursal } = req.body;
+    const {
+      descripcion,
+      codigo_sucursal,
+      id_config_sap,
+      txt_consorcio_unysoft,
+      txt_empresa_unysoft,
+      autorizador_unysoft
+    } = req.body;
 
     // Validar que los campos requeridos no estén vacíos
     if (!descripcion || !codigo_sucursal) {
@@ -70,22 +77,66 @@ const createSucursal = async (req, res) => {
       });
     }
 
-    // Ejecutar la consulta de inserción
+    // ✅ Validar si la descripción ya existe en la base de datos
+    const checkDescripcion = await pool.request()
+      .input('descripcion', sql.VarChar, descripcion)
+      .query('SELECT COUNT(*) AS count FROM dbo.sucursal WHERE descripcion = @descripcion');
+
+    if (checkDescripcion.recordset[0].count > 0) {
+      return res.status(400).json({
+        message: `La descripcion "${descripcion}" ya está en uso. Por favor, elige otra.`,
+      });
+    }
+
+    let idConfigSapToInsert = null;
+
+    // Validar si `id_config_sap` fue enviado y debe ser verificado
+    if (id_config_sap !== undefined && id_config_sap !== null && id_config_sap !== '') {
+      const checkConfigSap = await pool.request()
+        .input('id_config_sap', sql.Int, id_config_sap)
+        .query('SELECT * FROM dbo.config_sap WHERE id = @id_config_sap');
+
+      if (checkConfigSap.recordset.length === 0) {
+        return res.status(400).json({
+          message: `El id_config_sap ${id_config_sap} no existe en la tabla config_sap.`,
+        });
+      }
+
+      idConfigSapToInsert = id_config_sap; // Si es válido, se asigna el valor
+    }
+
+    // ✅ Ejecutar la consulta de inserción y devolver el ID generado
     const insertQuery = await pool.request()
       .input('descripcion', sql.VarChar, descripcion)
       .input('codigo_sucursal', sql.VarChar, codigo_sucursal)
+      .input('id_config_sap', sql.Int, idConfigSapToInsert)
+      .input('txt_consorcio_unysoft', sql.VarChar, txt_consorcio_unysoft || null)
+      .input('txt_empresa_unysoft', sql.VarChar, txt_empresa_unysoft || null)
+      .input('autorizador_unysoft', sql.Int, autorizador_unysoft || null)
       .query(`
-        INSERT INTO dbo.sucursal (descripcion, codigo_sucursal)
-        VALUES (@descripcion, @codigo_sucursal)
+          INSERT INTO dbo.sucursal (
+              descripcion, codigo_sucursal, id_config_sap, 
+              txt_consorcio_unysoft, txt_empresa_unysoft, autorizador_unysoft
+          )
+          OUTPUT INSERTED.id_sucursal
+          VALUES (
+              @descripcion, @codigo_sucursal, @id_config_sap, 
+              @txt_consorcio_unysoft, @txt_empresa_unysoft, @autorizador_unysoft
+          )
       `);
 
-    // Verificar si se insertó el registro correctamente
-    if (insertQuery.rowsAffected[0] > 0) {
+    // ✅ Verificar si la inserción fue exitosa y devolver el ID generado
+    if (insertQuery.recordset.length > 0) {
       return res.status(201).json({
         message: 'Sucursal creada exitosamente.',
         data: {
+          id: insertQuery.recordset[0].id_sucursal, // ✅ Ahora el frontend recibe el ID
           descripcion,
           codigo_sucursal,
+          id_config_sap: idConfigSapToInsert,
+          txt_consorcio_unysoft,
+          txt_empresa_unysoft,
+          autorizador_unysoft,
         },
       });
     } else {
@@ -97,6 +148,131 @@ const createSucursal = async (req, res) => {
   } catch (error) {
     console.error('Error al crear la sucursal:', error);
     res.status(500).json({ message: 'Error interno al crear la sucursal.' });
+  }
+};
+
+const getSucursal = async (req, res) => {
+  try {
+    const pool = await getConnection();
+    const { id_sucursal } = req.params; // Obtener el ID de la URL
+
+    // Verificar que el ID fue proporcionado
+    if (!id_sucursal) {
+      return res.status(400).json({ message: 'El ID de la sucursal es obligatorio.' });
+    }
+
+    // Buscar la sucursal por ID
+    const result = await pool.request()
+      .input('id_sucursal', sql.Int, id_sucursal)
+      .query(`SELECT * FROM dbo.sucursal WHERE id_sucursal = @id_sucursal`);
+
+    // Verificar si se encontró la sucursal
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ message: `No se encontró la sucursal con ID ${id_sucursal}.` });
+    }
+
+    // Devolver la sucursal encontrada
+    return res.status(200).json({ data: result.recordset[0] });
+
+  } catch (error) {
+    console.error('Error al obtener la sucursal:', error);
+    res.status(500).json({ message: 'Error interno al obtener la sucursal.' });
+  }
+};
+
+const updateSucursal = async (req, res) => {
+  try {
+    const pool = await getConnection();
+    const { id_sucursal } = req.params; // Obtener el ID de la URL
+
+    // Obtener los valores enviados en el body
+    const {
+      descripcion,
+      codigo_sucursal,
+      id_config_sap,
+      txt_consorcio_unysoft,
+      txt_empresa_unysoft,
+      autorizador_unysoft
+    } = req.body;
+
+    // Verificar que el ID fue proporcionado
+    if (!id_sucursal) {
+      return res.status(400).json({ message: 'El ID de la sucursal es obligatorio.' });
+    }
+
+    // Verificar si la sucursal existe antes de actualizar
+    const checkSucursal = await pool.request()
+      .input('id_sucursal', sql.Int, id_sucursal)
+      .query('SELECT * FROM dbo.sucursal WHERE id_sucursal = @id_sucursal');
+
+    if (checkSucursal.recordset.length === 0) {
+      return res.status(404).json({ message: `No se encontró la sucursal con ID ${id_sucursal}.` });
+    }
+
+    // Validar si la descripción ya existe en otra sucursal
+    if (descripcion) {
+      const checkDescripcion = await pool.request()
+        .input('descripcion', sql.VarChar, descripcion)
+        .input('id_sucursal', sql.Int, id_sucursal)
+        .query(`SELECT COUNT(*) AS count FROM dbo.sucursal WHERE descripcion = @descripcion AND id_sucursal != @id_sucursal`);
+
+      if (checkDescripcion.recordset[0].count > 0) {
+        return res.status(400).json({ message: `La descripción "${descripcion}" ya está en uso en otra sucursal.` });
+      }
+    }
+
+    let idConfigSapToInsert = null;
+
+    // Validar si `id_config_sap` fue enviado y debe ser verificado
+    if (id_config_sap !== undefined && id_config_sap !== null && id_config_sap !== '') {
+      const checkConfigSap = await pool.request()
+        .input('id_config_sap', sql.Int, id_config_sap)
+        .query('SELECT * FROM dbo.config_sap WHERE id = @id_config_sap');
+
+      if (checkConfigSap.recordset.length === 0) {
+        return res.status(400).json({ message: `El id_config_sap ${id_config_sap} no existe en la tabla config_sap.` });
+      }
+
+      idConfigSapToInsert = id_config_sap; // Si es válido, se asigna el valor
+    }
+
+    // Asignar valores, si están vacíos o no enviados, guardarlos como NULL
+    const newDescripcion = (descripcion !== undefined && descripcion !== "") ? descripcion : null;
+    const newCodigoSucursal = (codigo_sucursal !== undefined && codigo_sucursal !== "") ? codigo_sucursal : null;
+    const newTxtConsorcioUnysoft = (txt_consorcio_unysoft !== undefined && txt_consorcio_unysoft !== "") ? txt_consorcio_unysoft : null;
+    const newTxtEmpresaUnysoft = (txt_empresa_unysoft !== undefined && txt_empresa_unysoft !== "") ? txt_empresa_unysoft : null;
+    const newAutorizadorUnysoft = (autorizador_unysoft !== undefined && autorizador_unysoft !== "") ? autorizador_unysoft : null;
+
+    // Ejecutar la actualización
+    const updateQuery = await pool.request()
+      .input('id_sucursal', sql.Int, id_sucursal)
+      .input('descripcion', sql.VarChar, newDescripcion)
+      .input('codigo_sucursal', sql.VarChar, newCodigoSucursal)
+      .input('id_config_sap', sql.Int, idConfigSapToInsert !== null ? idConfigSapToInsert : null)
+      .input('txt_consorcio_unysoft', sql.VarChar, newTxtConsorcioUnysoft)
+      .input('txt_empresa_unysoft', sql.VarChar, newTxtEmpresaUnysoft)
+      .input('autorizador_unysoft', sql.Int, newAutorizadorUnysoft)
+      .query(`
+        UPDATE dbo.sucursal
+        SET descripcion = @descripcion,
+            codigo_sucursal = @codigo_sucursal,
+            id_config_sap = @id_config_sap,
+            txt_consorcio_unysoft = @txt_consorcio_unysoft,
+            txt_empresa_unysoft = @txt_empresa_unysoft,
+            autorizador_unysoft = @autorizador_unysoft
+        WHERE id_sucursal = @id_sucursal
+      `);
+
+    // Verificar si se actualizó la sucursal
+    if (updateQuery.rowsAffected[0] > 0) {
+      return res.status(200).json({ message: 'Sucursal actualizada exitosamente.' });
+    } else {
+      return res.status(400).json({ message: 'No se realizaron cambios en la sucursal.' });
+    }
+
+  } catch (error) {
+    console.error('Error al actualizar la sucursal:', error);
+    res.status(500).json({ message: 'Error interno al actualizar la sucursal.' });
   }
 };
 
@@ -200,9 +376,9 @@ const getAllSucursal = async (req, res) => {
       .input('limit', sql.Int, limitNumber)
       .query(`
         SELECT id_sucursal, descripcion, codigo_sucursal
-        FROM dbo.sucursal
+        FROM dbo.sucursal 
         ${filterQuery} -- Aplica filtro solo si existe búsqueda
-        ORDER BY id_sucursal
+        ORDER BY id_sucursal DESC
         OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
       `);
 
@@ -292,4 +468,19 @@ const setDefaultSucursal = async (req, res) => {
   }
 };
 
-module.exports = { getSucursales, setDefaultSucursal, getAllSucursales, getAllSucursal, createSucursal, updateSucursalN };
+const getConfigSAP = async (req, res) => {
+  try {
+    const pool = await getConnection();
+    const result = await pool.request().query(`
+          SELECT id, nombre, [user], activo
+          FROM dbo.config_sap
+      `);
+
+    res.status(200).json({ data: result.recordset });
+  } catch (error) {
+    console.error("❌ Error al obtener configuraciones SAP:", error);
+    res.status(500).json({ message: "Error al obtener las configuraciones SAP" });
+  }
+};
+
+module.exports = { getSucursales, setDefaultSucursal, getAllSucursales, getAllSucursal, createSucursal, updateSucursalN, getSucursal, updateSucursal, getConfigSAP };

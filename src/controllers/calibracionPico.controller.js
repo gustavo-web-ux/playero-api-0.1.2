@@ -269,9 +269,9 @@ const getCalibracionById = async (req, res) => {
 
         // Definir tipos de imágenes y la carpeta donde se encuentran
         const folderPath = "/home/administrador/APIS/shared"; // 📌 Ruta donde se guardan las imágenes
-        const imageTypes = ["foto_inicial_taxilitro", "foto_final_taxilitro", "foto_precinto_retirado", 
-        "foto_precinto_colocado", "foto_taxilitro_carga", "foto_med_balde", "firma_calibrador", "foto_final_taxilitro", 
-        "foto_precinto_retirado", "foto_precinto_colocado"];
+        const imageTypes = ["foto_inicial_taxilitro", "foto_final_taxilitro", "foto_precinto_retirado",
+            "foto_precinto_colocado", "foto_taxilitro_carga", "foto_med_balde", "firma_calibrador", "foto_final_taxilitro",
+            "foto_precinto_retirado", "foto_precinto_colocado"];
 
         // Leer y convertir imágenes a base64 para todos los registros
         for (let record of result.recordset) {
@@ -290,6 +290,191 @@ const getCalibracionById = async (req, res) => {
     }
 };
 
+const createPicos = async (req, res) => {
+    try {
+        const pool = await getConnection();
+        const { picos } = req.body; // Recibir un array de picos
+
+        // ✅ Validar que `picos` sea un array y no esté vacío
+        if (!picos || !Array.isArray(picos) || picos.length === 0) {
+            return res.status(400).json({ message: "Debe enviar al menos un pico." });
+        }
+
+        // ✅ Validar que todos los picos pertenezcan a la misma bodega
+        const idBodegaUnica = picos[0].id_bod; // Tomamos el id_bod del primer pico
+        const bodegasDiferentes = picos.some(pico => pico.id_bod !== idBodegaUnica);
+
+        if (bodegasDiferentes) {
+            return res.status(400).json({
+                message: "Todos los picos deben pertenecer a la misma bodega en una sola solicitud.",
+            });
+        }
+
+        // ✅ Validar si el `id_bod` existe en la tabla `bodega`
+        const checkBodega = await pool.request()
+            .input('id_bod', sql.Int, idBodegaUnica)
+            .query('SELECT * FROM dbo.bodega WHERE id_bod = @id_bod');
+
+        if (checkBodega.recordset.length === 0) {
+            return res.status(400).json({
+                message: `El id_bod ${idBodegaUnica} no existe en la tabla bodega.`,
+            });
+        }
+
+        const insertedPicos = [];
+
+        for (const pico of picos) {
+            const { id_bod, id_combustible, descripcion } = pico;
+
+            // ✅ Validar campos obligatorios
+            if (!id_bod || isNaN(id_bod) || !id_combustible || isNaN(id_combustible) || !descripcion) {
+                return res.status(400).json({
+                    message: "Los campos id_bod, id_combustible y descripcion son obligatorios y deben ser válidos.",
+                });
+            }
+
+            // ✅ Insertar el pico en la base de datos y obtener el ID generado
+            const insertQuery = await pool.request()
+                .input('id_bod', sql.Int, id_bod)
+                .input('id_combustible', sql.Int, id_combustible)
+                .input('descripcion', sql.VarChar, descripcion)
+                .query(`
+                    INSERT INTO dbo.pico_surtidor (id_bod, id_combustible, descripcion)
+                    OUTPUT INSERTED.id_pico
+                    VALUES (@id_bod, @id_combustible, @descripcion)
+                `);
+
+            if (insertQuery.recordset.length > 0) {
+                insertedPicos.push({
+                    id_pico: insertQuery.recordset[0].id_pico, // ✅ ID generado
+                    id_bod,
+                    id_combustible,
+                    descripcion,
+                });
+            }
+        }
+
+        return res.status(201).json({
+            message: "Picos creados exitosamente.",
+            data: insertedPicos, // ✅ Retornar todos los picos insertados
+        });
+
+    } catch (error) {
+        console.error("Error al crear los picos:", error);
+        res.status(500).json({ message: "Error interno al crear los picos." });
+    }
+};
+
+const getPicos = async (req, res) => {
+    try {
+        const pool = await getConnection();
+        const { id_sucursal, id_bod, id_pico } = req.query; // Filtros opcionales
+
+        let query = `
+        SELECT p.id_pico, p.id_bod, p.id_combustible, p.descripcion, 
+               b.id_sucursal, b.descripcion AS descripcion_bodega,
+               s.descripcion AS descripcion_sucursal
+        FROM dbo.pico_surtidor p
+        INNER JOIN dbo.bodega b ON p.id_bod = b.id_bod
+        INNER JOIN dbo.sucursal s ON b.id_sucursal = s.id_sucursal
+      `;
+
+        let request = pool.request();
+        let conditions = [];
+
+        // Agregar filtros según lo que se envíe en la solicitud
+        if (id_sucursal) {
+            conditions.push("b.id_sucursal = @id_sucursal");
+            request.input("id_sucursal", sql.Int, id_sucursal);
+        }
+
+        if (id_bod) {
+            conditions.push("p.id_bod = @id_bod");
+            request.input("id_bod", sql.Int, id_bod);
+        }
+
+        if (id_pico) {
+            conditions.push("p.id_pico = @id_pico");
+            request.input("id_pico", sql.Int, id_pico);
+        }
+
+        // Construir la consulta con los filtros
+        if (conditions.length > 0) {
+            query += " WHERE " + conditions.join(" AND ");
+        }
+
+        // Ejecutar la consulta
+        const result = await request.query(query);
+
+        // Si no se encontraron resultados, devolver un 404
+        if (result.recordset.length === 0) {
+            return res.status(404).json({ message: "No se encontraron picos con los filtros aplicados." });
+        }
+
+        return res.status(200).json({ data: result.recordset });
+
+    } catch (error) {
+        console.error("Error al obtener los picos:", error);
+        res.status(500).json({ message: "Error interno al obtener los picos." });
+    }
+};
+
+const updatePico = async (req, res) => {
+    try {
+        const pool = await getConnection();
+        const { id_sucursal, id_bod, id_pico } = req.params; // Obtener IDs de la URL
+        const { descripcion, id_combustible } = req.body; // Datos a actualizar
+
+        // Verificar que los parámetros obligatorios fueron proporcionados
+        if (!id_sucursal || !id_bod || !id_pico) {
+            return res.status(400).json({ message: "Los IDs de sucursal, bodega y pico son obligatorios." });
+        }
+
+        // Verificar si el pico existe y pertenece a la bodega y sucursal correctos
+        const checkPico = await pool.request()
+            .input("id_sucursal", sql.Int, id_sucursal)
+            .input("id_bod", sql.Int, id_bod)
+            .input("id_pico", sql.Int, id_pico)
+            .query(`
+          SELECT p.id_pico, p.id_bod, p.id_combustible, p.descripcion, 
+                 b.id_sucursal
+          FROM dbo.pico_surtidor p
+          INNER JOIN dbo.bodega b ON p.id_bod = b.id_bod
+          WHERE p.id_pico = @id_pico AND p.id_bod = @id_bod AND b.id_sucursal = @id_sucursal
+        `);
+
+        if (checkPico.recordset.length === 0) {
+            return res.status(404).json({ message: `No se encontró el pico con ID ${id_pico} en la bodega ${id_bod} y sucursal ${id_sucursal}.` });
+        }
+
+        // Mantener valores anteriores si no se envían en la solicitud
+        const newDescripcion = (descripcion !== undefined && descripcion !== "") ? descripcion : checkPico.recordset[0].descripcion;
+        const newIdCombustible = (id_combustible !== undefined && id_combustible !== "") ? id_combustible : checkPico.recordset[0].id_combustible;
+
+        // Ejecutar la actualización
+        const updateQuery = await pool.request()
+            .input("id_pico", sql.Int, id_pico)
+            .input("descripcion", sql.VarChar, newDescripcion)
+            .input("id_combustible", sql.Int, newIdCombustible)
+            .query(`
+          UPDATE dbo.pico_surtidor
+          SET descripcion = @descripcion,
+              id_combustible = @id_combustible
+          WHERE id_pico = @id_pico
+        `);
+
+        // Verificar si se actualizó el pico
+        if (updateQuery.rowsAffected[0] > 0) {
+            return res.status(200).json({ message: "Pico actualizado exitosamente." });
+        } else {
+            return res.status(400).json({ message: "No se realizaron cambios en el pico." });
+        }
+
+    } catch (error) {
+        console.error("Error al actualizar el pico:", error);
+        res.status(500).json({ message: "Error interno al actualizar el pico." });
+    }
+};
 
 
-module.exports = { getCalibraciones, getCalibracionById }
+module.exports = { getCalibraciones, getCalibracionById, createPicos, getPicos, updatePico }
