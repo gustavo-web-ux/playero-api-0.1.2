@@ -104,10 +104,10 @@ const getReporteWialonPlayero = async (req, res) => {
             JOIN sucursal su ON su.id_sucursal = ts.id_suc
             FULL JOIN cargas_wialon_tmp cw ON ts.id_equipo = cw.id_equipo
                 AND CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) = CAST(cw.fecha_hora AS DATE)
-                AND ABS(DATEDIFF(HOUR,
-                    CAST(CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) AS DATETIME)
-                    + CAST(ts.hora AS DATETIME),
-                    cw.fecha_hora)) <= 2
+                --AND ABS(DATEDIFF(HOUR,
+                    --CAST(CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) AS DATETIME)
+                    --+ CAST(ts.hora AS DATETIME),
+                    --cw.fecha_hora)) <= 2
             WHERE ${whereClause}
         `;
 
