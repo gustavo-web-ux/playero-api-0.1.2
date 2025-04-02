@@ -1,4 +1,101 @@
 const { getConnection, sql } = require('../database/init');
+const fs = require('fs').promises;
+const path = require('path');
+
+// Filtrar archivos relevantes en la carpeta
+const filterRelevantFiles = (files, imageTypes, ticketData) => {
+    return files.filter((file) => {
+        const fileIdMatch = file.match(/_(.+)\.jpg$/);
+        if (!fileIdMatch) return false;
+
+        const fileId = fileIdMatch[1];
+        return imageTypes.some((type) =>
+            ticketData[type] &&
+            ((Array.isArray(ticketData[type]) && ticketData[type].includes(fileId)) ||
+                (typeof ticketData[type] === 'string' && ticketData[type].includes(fileId)) ||
+                (typeof ticketData[type] === 'number' && ticketData[type] === parseInt(fileId)))
+        );
+    });
+};
+
+// Procesar archivos relevantes en paralelo
+const processFilesInParallel = async (files, folderPath, imageTypes, ticketData) => {
+    const imageDecode = {};
+
+    await Promise.all(
+        files.map(async (file) => {
+            const filePath = path.join(folderPath, file);
+            const base64Data = await encodeFileToBase64(filePath);
+
+            const fileIdMatch = file.match(/_(.+)\.jpg$/);
+            const fileId = fileIdMatch[1];
+
+            const matchedProperty = imageTypes.find((type) =>
+                ticketData[type] &&
+                ((Array.isArray(ticketData[type]) && ticketData[type].includes(fileId)) ||
+                    (typeof ticketData[type] === 'string' && ticketData[type].includes(fileId)) ||
+                    (typeof ticketData[type] === 'number' && ticketData[type] === parseInt(fileId)))
+            );
+
+            if (matchedProperty) {
+                imageDecode[matchedProperty] = imageDecode[matchedProperty] || [];
+                imageDecode[matchedProperty].push(base64Data);
+            }
+        })
+    );
+
+    return imageDecode;
+};
+
+// Función para leer y convertir imágenes a base64
+const readAndConvertImages = async (folderPath, imageTypes, resultData) => {
+    try {
+        // Verificar que la carpeta existe
+        await fs.access(folderPath);
+
+        // Obtener la lista de archivos en la carpeta
+        const files = await fs.readdir(folderPath);
+
+        if (!resultData || resultData.length === 0) {
+            throw new Error('Error: No hay datos en resultData');
+        }
+
+        const ticketData = resultData[0];
+
+        // Filtrar archivos relevantes
+        const relevantFiles = filterRelevantFiles(files, imageTypes, ticketData);
+
+        // Procesar archivos relevantes en paralelo
+        const decodedImages = await processFilesInParallel(
+            relevantFiles,
+            folderPath,
+            imageTypes,
+            ticketData
+        );
+
+        // Agregar entradas para tipos de imagen faltantes con arrays vacíos
+        imageTypes.forEach((type) => {
+            if (!decodedImages[type]) {
+                decodedImages[type] = [];
+            }
+        });
+
+        return decodedImages;
+    } catch (error) {
+        console.error(`Error en readAndConvertImages: ${error.message}`);
+        throw error;
+    }
+};
+
+// Función para codificar un archivo a base64
+const encodeFileToBase64 = async (filePath) => {
+    try {
+        return await fs.readFile(filePath, { encoding: 'base64' });
+    } catch (error) {
+        console.error(`Error codificando el archivo a base64: ${filePath}`, error.message);
+        throw error;
+    }
+};
 
 const getReporteWialonPlayero = async (req, res) => {
     try {
@@ -50,7 +147,7 @@ const getReporteWialonPlayero = async (req, res) => {
         if (descripcion_ubicacion) {
             whereClause += " AND su.descripcion LIKE '%' + @descripcion_ubicacion + '%'";
             request.input("descripcion_ubicacion", sql.VarChar, descripcion_ubicacion);
-        }        
+        }
 
         if (fecha_inicio && fecha_fin) {
             whereClause += `
@@ -129,45 +226,74 @@ const getReporteWialonPlayero = async (req, res) => {
     }
 };
 
-// const getPlayeroWialonDetalle = async (req, res) => {
-//     try {
-//         const pool = await getConnection();
-//         const { id_ticket } = req.params; // <-- cambio aqu
+const getPlayeroWialonDetalle = async (req, res) => {
+    try {
+        const pool = await getConnection();
+        const { id_ticket } = req.params; // <-- cambio aqu
 
-//         if (!id_ticket) {
-//             return res.status(400).json({ message: "El parámetro id_ticket es obligatorio." });
-//         }
+        if (!id_ticket) {
+            return res.status(400).json({ message: "El parámetro id_ticket es obligatorio." });
+        }
 
-//         const request = pool.request();
-//         request.input("id_ticket", sql.VarChar, id_ticket);
+        const request = pool.request();
+        request.input("id_ticket", sql.VarChar, id_ticket);
 
-//         const query = `
-//             SELECT ts.*,
-//             cw.id_equipo as id_vehiculo, cw.fecha_hora, cw.litros_sensor, cw.localizacion, cw.nivel_combus_final, cw.nivel_combus_inicial
-//             FROM ticket_surtidor ts
-//             INNER JOIN cargas_wialon cw ON ts.id_equipo = cw.id_equipo
-//                 AND CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) = CAST(cw.fecha_hora AS DATE)
-//                 AND ABS(DATEDIFF(HOUR,
-//                     CAST(CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) AS DATETIME)
-//                     + CAST(ts.hora AS DATETIME), 
-//                     cw.fecha_hora)) <= 2
-//             WHERE ts.id_ticket = @id_ticket
-//               AND cw.litros_sensor IS NOT NULL
-//         `;
+        const query = `
+            SELECT ts.id_ticket, ts.fecha, ts.hora, ts.id_suc, su.descripcion as sucursal, ts.id_bod, bo.descripcion as deposito,
+            (SUBSTRING(CAST(ts.fecha AS varchar(8)), 7, 2) + '-' + 
+            SUBSTRING(CAST(ts.fecha AS varchar(8)), 5, 2) + '-' + 
+            SUBSTRING(CAST(ts.fecha AS varchar(8)), 1, 4)) AS fecha2,
+            pi.descripcion as pico, ts.id_playero, pl.nombre_apellido as playero, ts.ruc_cliente, cli.descripcion_cliente, ts.precio,
+            ts.id_operador as id_operador_chofer, op.nombre_apellido as operador_chofer, ts.id_equipo, ve.descripcion_vehiculo as equipo_vehiculo,
+            ts.kilometro, FORMAT(ts.horometro, 'N2', 'es-ES') AS horometro, pi.id_combustible, com.descripcion as combustible, ts.litros, ts.observaciones_ticket, ts.ubicacion_carga,
+            ts.firma_conductor, ts.foto_observaciones, ts.foto_chapa, ts.foto_taxilitro,ts.inicio_taxilitro,ts.final_taxilitro, ts.foto_taxilitro_fin,ts.foto_horometro, ts.foto_kilometro,
+            cw.id_equipo as id_vehiculo, cw.fecha_hora, cw.litros_sensor, cw.localizacion, cw.nivel_combus_final, cw.nivel_combus_inicial, 
+            COALESCE(ROUND((cw.litros_sensor - ts.litros), 2), 0) AS diferencia_litros,
+            COALESCE(CONCAT(ROUND(((cw.litros_sensor - ts.litros) / ts.litros) * 100, 2), '%'), '') AS porcentaje
+            FROM ticket_surtidor ts
+                join sys_playero.dbo.persona op on ts.id_operador = op.cedula
+                join sys_playero.dbo.persona pl on ts.id_playero = pl.cedula
+                join sys_playero.dbo.sucursal su on ts.id_suc= su.id_sucursal
+                join sys_playero.dbo.bodega bo on ts.id_bod= bo.id_bod
+                join sys_playero.dbo.cliente cli on ts.ruc_cliente= cli.ruc
+                join sys_playero.dbo.vehiculo ve on ts.id_equipo= ve.id_vehiculo
+                join sys_playero.dbo.pico_surtidor pi on ts.id_pico = pi.id_pico
+                join sys_playero.dbo.combustible com on ts.id_com= com.id_combustible
+                left JOIN cargas_wialon_tmp cw ON ts.id_equipo = cw.id_equipo
+                AND CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) = CAST(cw.fecha_hora AS DATE)
+                    -- AND ABS(DATEDIFF(HOUR,
+                    --     CAST(CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) AS DATETIME)
+                    --     + CAST(ts.hora AS DATETIME), 
+                    --     cw.fecha_hora)) <= 2
+            WHERE ts.id_ticket = @id_ticket
+              --AND cw.litros_sensor IS NOT NULL
+        `;
 
-//         const result = await request.query(query);
+        const result = await request.query(query);
 
-//         if (result.recordset.length === 0) {
-//             return res.status(404).json({ message: "No existe cruce de datos entre el Playero y Wialon para el ticket consultado" });
-//         }
+        if (result.recordset.length === 0) {
+            return res.status(404).json({ message: "No existe cruce de datos entre el Playero y Wialon para el ticket consultado" });
+        }
 
-//         return res.status(200).json({ data: result.recordset[0] });
+        // Definir tipos de imágenes y la carpeta donde se encuentran
+        const folderPath = '/home/administrador/APIS/shared';
+        const imageTypes = ['foto_chapa', 'foto_taxilitro', 'foto_horometro', 'foto_observaciones', 'firma_conductor', 'foto_kilometro', 'foto_taxilitro_fin'];
 
-//     } catch (error) {
-//         console.error("❌ Error en getTicketDetalle:", error);
-//         res.status(500).json({ message: "Error interno al obtener el detalle del ticket." });
-//     }
-// };
+        // Procesar imágenes
+        const images = await readAndConvertImages(folderPath, imageTypes, result.recordset);
+
+        // Asociar imágenes procesadas al resultado
+        imageTypes.forEach((type) => {
+            result.recordset[0][type] = images[type] || [];
+        });
+
+        return res.status(200).json({ data: result.recordset[0] });
+
+    } catch (error) {
+        console.error("❌ Error en getTicketDetalle:", error);
+        res.status(500).json({ message: "Error interno al obtener el detalle del ticket." });
+    }
+};
 
 
-module.exports = { getReporteWialonPlayero };
+module.exports = { getReporteWialonPlayero, getPlayeroWialonDetalle };

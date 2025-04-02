@@ -91,7 +91,7 @@ router.put('/updatePrecioSucursal/:id_sucursal/:id_combustible', precios.updateP
 
 //Cargas wialon playero
 router.get('/getWialonPlayero', playeroWialon.getReporteWialonPlayero);
-//router.get('/getPlayeroWialonDetalle/:id_ticket', playeroWialon.getPlayeroWialonDetalle);
+router.get('/getPlayeroWialonDetalle/:id_ticket', playeroWialon.getPlayeroWialonDetalle);
 
 //getCombustibles
 router.get('/getCombustibles', precios.getCombustibles);
