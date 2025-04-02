@@ -338,7 +338,7 @@ const getAllSucursales = async (req, res) => {
     // Consulta para obtener todas las sucursales
     const sucursalesQuery = await pool.request().query(`
       SELECT id_sucursal, descripcion
-      FROM dbo.sucursal
+      FROM dbo.sucursal order by id_sucursal DESC
     `);
 
     const sucursales = sucursalesQuery.recordset;

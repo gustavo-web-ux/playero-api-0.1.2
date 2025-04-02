@@ -7,6 +7,7 @@ const getReporteWialonPlayero = async (req, res) => {
             id_equipo,
             fecha_inicio,
             fecha_fin,
+            descripcion_ubicacion,
             page = 1,
             limit = 10,
             sortBy,
@@ -17,12 +18,6 @@ const getReporteWialonPlayero = async (req, res) => {
 
         const request = pool.request();
         let whereClause = "1=1";
-
-        // const allowedSortFields = [
-        //     'id_ticket', 'id_equipo', 'Ubicación', 'fecha', 'fecha_hora',
-        //     'litros', 'litros_sensor', 'diferencia_litros', 'porcentaje',
-        //     'combus_inicial', 'combus_final'
-        // ];
 
         const allowedSortFields = [
             'id_ticket', 'id_equipo', 'Ubicación',
@@ -51,6 +46,11 @@ const getReporteWialonPlayero = async (req, res) => {
             whereClause += " AND (ts.id_equipo LIKE '%' + @id_equipo + '%' OR cw.id_equipo LIKE '%' + @id_equipo + '%')";
             request.input("id_equipo", sql.VarChar, id_equipo);
         }
+
+        if (descripcion_ubicacion) {
+            whereClause += " AND su.descripcion LIKE '%' + @descripcion_ubicacion + '%'";
+            request.input("descripcion_ubicacion", sql.VarChar, descripcion_ubicacion);
+        }        
 
         if (fecha_inicio && fecha_fin) {
             whereClause += `
@@ -145,7 +145,7 @@ const getReporteWialonPlayero = async (req, res) => {
 //             SELECT ts.*,
 //             cw.id_equipo as id_vehiculo, cw.fecha_hora, cw.litros_sensor, cw.localizacion, cw.nivel_combus_final, cw.nivel_combus_inicial
 //             FROM ticket_surtidor ts
-//             INNER JOIN cargas_wialon_tmp cw ON ts.id_equipo = cw.id_equipo
+//             INNER JOIN cargas_wialon cw ON ts.id_equipo = cw.id_equipo
 //                 AND CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) = CAST(cw.fecha_hora AS DATE)
 //                 AND ABS(DATEDIFF(HOUR,
 //                     CAST(CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) AS DATETIME)
