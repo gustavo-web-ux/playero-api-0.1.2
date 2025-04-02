@@ -116,27 +116,34 @@ const getReporteWialonPlayero = async (req, res) => {
         const request = pool.request();
         let whereClause = "1=1";
 
-        const allowedSortFields = [
-            'id_ticket', 'id_equipo', 'Ubicación',
-            'fecha_ticket_real', 'fecha_hora_wialon',
-            'litros_playero', 'litros_sensor', 'diferencia_litros',
-            'porcentaje_valor', 'combus_inicial', 'combus_final'
-        ];
+        const sortFieldMap = {
+            id_ticket: "ts.id_ticket",
+            id_equipo: "COALESCE(ts.id_equipo, cw.id_equipo)",
+            Ubicación: "COALESCE(su.descripcion,'No registrado en el playero')",
+            fecha_ticket: "CAST(CONVERT(DATETIME, CONCAT(CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112), ' ', ts.hora), 121) AS DATETIME)",
+            fecha_hora_wialon: "cw.fecha_hora",
+            litros_playero: "ts.litros",
+            litros_sensor: "cw.litros_sensor",
+            diferencia_litros: "cw.litros_sensor - ts.litros",
+            porcentaje: "((cw.litros_sensor - ts.litros) / NULLIF(ts.litros, 0)) * 100",
+            combus_inicial: "cw.nivel_combus_inicial",
+            combus_final: "cw.nivel_combus_final"
+        };
 
         let orderClause = `
             ORDER BY 
                 CASE 
-                WHEN COALESCE(CONCAT(CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112), ' ', ts.hora), null) = '' 
-                    THEN cw.fecha_hora
-                WHEN COALESCE(cw.fecha_hora, null) IS NULL 
-                    THEN CONVERT(datetime, (CONCAT(CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112), ' ', ts.hora)), 121)
-                ELSE NULL
+                    WHEN COALESCE(CONCAT(CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112), ' ', ts.hora), null) = '' 
+                        THEN cw.fecha_hora
+                    WHEN COALESCE(cw.fecha_hora, null) IS NULL 
+                        THEN CONVERT(datetime, (CONCAT(CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112), ' ', ts.hora)), 121)
+                    ELSE NULL
                 END DESC
         `;
 
-        if (sortBy && allowedSortFields.includes(sortBy)) {
+        if (sortBy && sortFieldMap[sortBy]) {
             const direction = sortDirection.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
-            orderClause = `ORDER BY ${sortBy} ${direction}`;
+            orderClause = `ORDER BY ${sortFieldMap[sortBy]} ${direction}`;
         }
 
         if (id_equipo) {
