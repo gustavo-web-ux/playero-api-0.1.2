@@ -252,7 +252,7 @@ const getReporteWialonPlayero = async (req, res) => {
                     COALESCE(cw.nivel_combus_final, 0) as combus_final
                 FROM ticket_surtidor ts
                 JOIN sucursal su ON su.id_sucursal = ts.id_suc
-                FULL JOIN cargas_wialon_tmp cw ON ts.id_equipo = cw.id_equipo
+                FULL JOIN cargas_wialon cw ON ts.id_equipo = cw.id_equipo
                     AND CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) = CAST(cw.fecha_hora AS DATE)
                     --AND ABS(DATEDIFF(HOUR,
                         --CAST(CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) AS DATETIME) 
@@ -267,7 +267,7 @@ const getReporteWialonPlayero = async (req, res) => {
             SELECT COUNT(*) AS total
             FROM ticket_surtidor ts
             JOIN sucursal su ON su.id_sucursal = ts.id_suc
-            FULL JOIN cargas_wialon_tmp cw ON ts.id_equipo = cw.id_equipo
+            FULL JOIN cargas_wialon cw ON ts.id_equipo = cw.id_equipo
                 AND CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) = CAST(cw.fecha_hora AS DATE)
                 --AND ABS(DATEDIFF(HOUR,
                     --CAST(CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) AS DATETIME)
@@ -327,7 +327,7 @@ const getPlayeroWialonDetalle = async (req, res) => {
                 join sys_playero.dbo.vehiculo ve on ts.id_equipo= ve.id_vehiculo
                 join sys_playero.dbo.pico_surtidor pi on ts.id_pico = pi.id_pico
                 join sys_playero.dbo.combustible com on ts.id_com= com.id_combustible
-                left JOIN cargas_wialon_tmp cw ON ts.id_equipo = cw.id_equipo
+                left JOIN cargas_wialon cw ON ts.id_equipo = cw.id_equipo
                 AND CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) = CAST(cw.fecha_hora AS DATE)
                     -- AND ABS(DATEDIFF(HOUR,
                     --     CAST(CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112) AS DATETIME)
