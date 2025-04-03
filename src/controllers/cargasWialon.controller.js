@@ -125,7 +125,9 @@ const getReporteWialonPlayero = async (req, res) => {
             litros_playero: "ts.litros",
             litros_sensor: "cw.litros_sensor",
             diferencia_litros: "cw.litros_sensor - ts.litros",
-            porcentaje: "((cw.litros_sensor - ts.litros) / NULLIF(ts.litros, 0)) * 100",
+            //porcentaje: "((cw.litros_sensor - ts.litros) / NULLIF(ts.litros, 0)) * 100",
+            //porcentaje: "COALESCE(ROUND(((cw.litros_sensor - ts.litros) / ts.litros) * 100, 2), 0)",
+            porcentaje: "COALESCE(ROUND(((cw.litros_sensor - ts.litros) / NULLIF(ts.litros, 0)) * 100, 2), 0)",
             combus_inicial: "cw.nivel_combus_inicial",
             combus_final: "cw.nivel_combus_final"
         };
@@ -143,7 +145,66 @@ const getReporteWialonPlayero = async (req, res) => {
 
         if (sortBy && sortFieldMap[sortBy]) {
             const direction = sortDirection.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
-            orderClause = `ORDER BY ${sortFieldMap[sortBy]} ${direction}`;
+
+            // CASO PERSONALIZADO para porcentaje
+            if (sortBy === 'porcentaje') {
+                orderClause = `
+                    ORDER BY 
+                        CASE 
+                            WHEN ts.litros = 0 OR ts.litros IS NULL OR cw.litros_sensor IS NULL THEN 1 
+                            ELSE 0 
+                        END,
+                        ROUND(((cw.litros_sensor - ts.litros) / NULLIF(ts.litros, 0)) * 100, 2) ${direction}
+                `;
+            } else if (sortBy === 'diferencia_litros') {
+                orderClause = `
+                    ORDER BY 
+                        CASE 
+                            WHEN cw.litros_sensor IS NULL OR ts.litros IS NULL THEN 1 
+                            ELSE 0 
+                        END,
+                        ROUND((cw.litros_sensor - ts.litros), 2) ${direction}
+                `;
+            } else if (sortBy === 'litros_sensor') {
+                orderClause = `
+                    ORDER BY 
+                        CASE 
+                            WHEN cw.litros_sensor IS NULL OR cw.litros_sensor = 0 THEN 1 
+                            ELSE 0 
+                        END,
+                        ROUND((cw.litros_sensor), 2) ${direction}
+                `;
+            } else if (sortBy === 'litros_playero') {
+                orderClause = `
+                    ORDER BY 
+                        CASE 
+                            WHEN ts.litros IS NULL OR ts.litros = 0 THEN 1 
+                            ELSE 0 
+                        END,
+                        ROUND((ts.litros), 2) ${direction}
+                `;
+            } else if (sortBy === 'fecha_ticket') {
+                orderClause = `
+                    ORDER BY 
+                        CASE 
+                            WHEN ts.fecha IS NULL OR ts.hora IS NULL OR ts.fecha = 0 THEN 1
+                            ELSE 0
+                        END,
+                        CAST(CONVERT(DATETIME, CONCAT(CONVERT(DATE, CAST(ts.fecha AS VARCHAR(8)), 112), ' ', ts.hora), 121) AS DATETIME) ${direction}
+                `;
+            } else if (sortBy === 'fecha_hora_wialon') {
+                orderClause = `
+                    ORDER BY 
+                        CASE 
+                            WHEN cw.fecha_hora IS NULL THEN 1
+                            ELSE 0
+                        END,
+                        cw.fecha_hora ${direction}
+                `;
+            } else {
+                orderClause = `ORDER BY ${sortFieldMap[sortBy]} ${direction}`;
+            }
+
         }
 
         if (id_equipo) {
