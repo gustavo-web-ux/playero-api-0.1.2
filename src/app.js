@@ -29,11 +29,13 @@ const corsOptions = {
     'http://playero.tecnoedilsa.com.py:4200',
     'https://playero.tecnoedilsa.com.py:2421',
     'https://playero.tecnoedilsa.com.py:4200',
+    'http://190.128.224.70:4200',
     'http://192.168.10.235:4200',
     'http://localhost:3000',
     'http://localhost:4000',
     'http://localhost:3001',
-    'http://localhost:3002'
+    'http://localhost:3002',
+    'http://localhost:4002'
   ],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   credentials: true, // Permitir el envío de cookies y encabezados de autorización
@@ -63,6 +65,11 @@ app.use(
 app.get('/', (req, res) => {
   res.send('API funcionando');
 });
+
+app.get('/ping', (req, res) => {
+  res.status(200).send('pong');
+});
+
 
 // Definir rutas
 // esta direccion se cambio /api/kpi a /api/playero
