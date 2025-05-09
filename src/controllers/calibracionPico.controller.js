@@ -96,6 +96,7 @@ const getCalibraciones = async (req, res) => {
             pc.bodega,
             ISNULL(pc.tipo_operacion, 'Sin especificar') AS tipo_operacion,
             pc.obs_gral,
+            ISNULL(ps.descripcion, 'Sin especificar') as pico,
             pc.ci_encargado,
             pc.nombre_encargado,
             pc.id_mongo,
@@ -103,6 +104,7 @@ const getCalibraciones = async (req, res) => {
             s.id_sucursal,
             bo.descripcion AS nombreBodega
         FROM calibracion_pico_cabecera pc
+            INNER JOIN pico_surtidor ps ON ps.id_pico = pc.pico
             INNER JOIN bodega bo ON pc.bodega = bo.id_bod
             INNER JOIN sucursal s ON s.id_sucursal = bo.id_sucursal
         WHERE s.id_sucursal = @id_sucursal
